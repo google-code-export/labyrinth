@@ -1,0 +1,41 @@
+2006-10-21 Don Scorgie <DonScorgie@Blueyonder.co.uk>
+
+	* LINGUAS:
+    * cs.po:
+    Add Czech translation (Josef Vybíral)
+
+
+2006-10-18 Don Scorgie <DonScorgie@Blueyonder.co.uk>
+
+	* pt_BR.po:
+	Fix compilation error
+
+	* LINGUAS:
+	* ca.po:
+	Added Catalan Translation (Gil Forcada)
+
+
+2006-10-16  Don Scorgie  <DonScorgie@Blueyonder.co.uk>
+
+	* LINGUAS:
+	* pt_BR.po:
+	Added Brazilian Portugese Translation (Leonardo Gregianin)
+
+2006-10-11 Don Scorgie <DonScorgie@Blueyonder.co.uk>
+
+	* LINGUAS:
+	* pl.po:
+	Add Polish translation (Tomasz Dominikowski)
+
+	* LINGUAS:
+	* nl.po:
+	Add Dutch translation (Rigo Ketelings)
+
+	* labyrinth.pot:
+	Add convenience file to SVN for translators
+
+2006-10-09 Don Scorgie <DonScorgie@Blueyonder.co.uk>
+
+	* LINGUAS:
+	* ru.po:
+	Add Russian Translation (Alexandre Prokoudine) :)
