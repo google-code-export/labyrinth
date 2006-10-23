@@ -1,5 +1,15 @@
 2006-10-23 Don Scorgie <DonScorgie@Blueyonder.co.uk>
 
+	(Very, very seriously broken)
+	* src/MMapArea.py:
+	Add beginnings of the new basic structure
+
+	* src/MainWindow.py:
+	Adapt slightly to renamed MMapArea signals
+
+	* doc/Rework-plan-pseudocode.txt:
+	Add signals list for MMapArea and Thoughts
+
 	(Broken - don't use on real maps)
 	* src/MainWindow.py:
 	Clean up constructor for MainWindow.  It was just taunting me
