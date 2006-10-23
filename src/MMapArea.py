@@ -37,9 +37,294 @@ import DrawingThought
 MODE_EDITING = 0
 MODE_IMAGE = 1
 MODE_DRAW = 2
+# Until all references of MODE_MOVING are removed...
 MODE_MOVING = 999
 
+TYPE_TEXT = 0
+TYPE_IMAGE = 1
+TYPE_DRAW = 2
+
+# Note: This is (atm) very broken.  It will allow you to create new canvases, but not
+# create new thoughts or load existing maps.
+# To get it working either fix the TODO list at the bottom of the class, implement the
+# necessary features within all the thought types.  If you do, please send a patch ;)
+# OR: Change this class to MMapAreaNew and MMapAreaOld to MMapArea
+
 class MMapArea (gtk.DrawingArea):
+	'''A MindMapArea Widget.  A blank canvas with a collection of child thoughts.\
+	   It is responsible for processing signals and such from the whole area and \
+	   passing these on to the correct child.  It also informs things when to draw'''
+	   
+	__gsignals__ = dict (title_changed		= (gobject.SIGNAL_RUN_FIRST,
+											   gobject.TYPE_NONE,
+											   (gobject.TYPE_STRING, )),
+						 doc_save			= (gobject.SIGNAL_RUN_FIRST,
+											   gobject.TYPE_NONE,
+											   (gobject.TYPE_PYOBJECT, gobject.TYPE_PYOBJECT)),
+						 doc_delete         = (gobject.SIGNAL_RUN_FIRST,
+						 					   gobject.TYPE_NONE,
+						 					   ()),
+						 change_mode        = (gobject.SIGNAL_RUN_LAST,
+						 					   gobject.TYPE_NONE,
+						 					   (gobject.TYPE_INT, )),
+						 change_buffer      = (gobject.SIGNAL_RUN_LAST,
+						 					   gobject.TYPE_NONE,
+						 					   (gobject.TYPE_OBJECT, )),
+						 text_selection_changed  = (gobject.SIGNAL_RUN_FIRST,
+						 					   gobject.TYPE_NONE,
+						 					   (gobject.TYPE_INT, gobject.TYPE_INT, gobject.TYPE_STRING)))
+
+	def __init__(self):
+		super (MMapArea, self).__init__()
+
+		self.thoughts = []
+		self.links = []
+		self.selected_thoughts = []
+		self.num_selected = 0
+		self.primary_thought = None
+		self.current_root = None
+		self.pango_context = self.create_pango_context()
+		self.watching_movement = False
+
+		self.unending_link = None
+		self.nthoughts = 0
+		
+		impl = dom.getDOMImplementation()
+		self.save = impl.createDocument("http://www.donscorgie.blueyonder.co.uk/labns", "MMap", None)
+		self.element = self.save.documentElement
+		self.im_context = gtk.IMMulticontext ()
+		
+		self.mode = MODE_EDITING
+		
+		self.connect ("expose_event", self.expose)
+		self.connect ("button_release_event", self.button_release)
+		self.connect ("button_press_event", self.button_down)
+		self.connect ("motion_notify_event", self.motion)
+		self.connect ("key_press_event", self.key_press)
+		self.connect ("key_release_event", self.key_release)
+		self.commit_handler = None
+		
+		self.set_events (gtk.gdk.KEY_PRESS_MASK |
+						 gtk.gdk.KEY_RELEASE_MASK |
+						 gtk.gdk.BUTTON_PRESS_MASK |
+						 gtk.gdk.BUTTON_RELEASE_MASK |
+						 gtk.gdk.POINTER_MOTION_MASK
+						)
+						
+		self.set_flags (gtk.CAN_FOCUS)
+
+
+	def button_down (self, widget, event):
+		ret = False
+		obj = self.find_object_at (event.get_coords())
+		
+		if obj:
+			ret = obj.process_button_down (event)
+		elif event.button == 3:
+			ret = self.create_popup_menu (event.coords)
+		return ret
+	
+	def button_release (self, widget, event):
+		ret = False
+		obj = self.find_object_at (event.get_coords ())
+		
+		if obj:
+			ret = obj.process_button_release (event, self.unending_link)
+		elif self.unending_link or event.button == 1:
+			ret = self.create_new_thought (event.coords ())
+		return ret
+	
+	def key_press (self, widget, event):
+		if not self.im_context.filter_keypress (event):
+			if len(self.selected) != 1 or not self.selected[0].process_key_press (event):
+				return self.global_key_handler ()
+		return False
+				
+	def key_release (self, widget, event):
+		self.im_context.filter_keypress (event)
+		return True
+		
+	def motion (self, widget, event):
+		if self.unending_link:
+			self.unending_link.set_end (event.get_coords())
+			self.invalidate ()
+
+		obj = self.find_object_at (event.get_coords())
+		if obj:
+			obj.handle_motion (event)	
+	
+	def find_object_at (self, coords):
+		for x in self.thoughts:
+			if x.includes (coords):
+				return x
+		for x in self.links:
+			if x.included (coords):
+				return x
+		return None
+	
+	def select_thought (self, thought, modifiers):	
+		if self.commit_handler:
+			self.im_context.disconnect (self.commit_handler)
+			self.commit_handler = None
+		if self.editing:
+			self.finish_editing ()
+		self.thoughts.remove (thought)
+		self.thoughts.insert(0,thought)
+		
+		if modifiers & gtk.gdk.CONTROL_MASK:
+			self.selected.append (thought)
+			thought.select ()
+		elif modifiers & gtk.gdk.SHIFT_MASK:
+			# TODO: This should really be different somehow
+			self.selected.append (thought)
+			thought.select ()
+		else:
+			for x in self.selected:
+				x.unselect ()
+			self.selected = [thought]
+		if len(self.selected) == 1:
+			self.commit_handler = self.im_context.connect ("commit", thought.commit_text)
+			
+	def begin_editing (self, thought):
+		if self.selected.count (thought) or len (self.selected != 1):
+			return
+		if self.editing:
+			self.finish_editing ()
+		self.editing = thought
+		thought.begin_editing ()
+
+	def create_link (self, thought, child, thought_coords, child_coords):
+		if child:
+			link = Links.Link (parent = thought, child = child)
+			self.links.append (link)
+		else:
+			if self.unending_link:
+				del self.unending_link
+			self.unending_link = Links.Link (parent = thought, start_coords = thought_coords,
+											 end_coords = child_coords)
+	
+	def claim_unending_link (self, thought):
+		if not self.unending_link:
+			return
+		self.unending_link.set_child (thought)
+		self.links.append (self.unending_link)
+		self.unending_link = None
+		
+	def create_popup_menu (self, thought, coords):
+		# TODO: FIXME
+		print "Popup menu requested"
+		return
+	
+	def finish_editing (self, thought = None):
+		if thought and thought != self.editing:
+			return
+		self.editing.finish_editing ()
+		self.editing = None
+		
+	def update_view (self, thought):
+		self.invalidate (True)
+
+	def invalidate (self, urgent = True):
+		'''Helper function to invalidate the entire screen, forcing a redraw'''
+		ntime = time.time ()
+		if ntime - self.time_elapsed > 0.025 or urgent:
+			alloc = self.get_allocation ()
+			rect = gtk.gdk.Rectangle (0, 0, alloc.width, alloc.height)
+			self.window.invalidate_rect (rect, True)
+			self.time_elapsed = ntime
+
+	def expose (self, widget, event):
+		'''Expose event.  Calls the draw function'''
+		context = self.window.cairo_create ()
+		self.draw (event, context)
+		return False
+
+	def draw (self, event, context):
+		'''Draw the map and all the associated thoughts'''
+		context.rectangle (event.area.x, event.area.y,
+						   event.area.width, event.area.height)
+		context.clip ()
+		context.set_source_rgb (1.0,1.0,1.0)
+		context.move_to (0,0)
+		context.paint ()
+		context.set_source_rgb (0.0,0.0,0.0)
+		for l in self.links:
+			l.draw (context)
+		if self.unending_link:
+			self.unending_link.draw (context)
+		for t in self.thoughts:
+			t.draw (context)
+
+	def create_new_thought (self, coords, thought_type = None):
+		if self.editing:
+			self.editing.finish_editing ()
+		
+		if thought_type:
+			type = thought_type
+		else:
+			type = self.mode
+		
+		if type == TYPE_TEXT:
+			thought = TextThought.TextThought (coords, self.pango_context, self.nthoughts, self.save)
+		elif type == TYPE_IMAGE:
+			thought = ImageThought.ImageThought (coords, self.pango_context, self.nthoughts, self.save)
+		elif type == TYPE_DRAWING:
+			thought = DrawingThought.DrawingThought (coords, self.pango_context, self.nthoughts, self.save)
+		self.nthoughts += 1
+		element = thought.get_save_element ()
+		self.element.appendChild (element)
+		thought.connect ("select_thought", self.select_thought)
+		thought.connect ("begin_editing", self.begin_editing)
+		thought.connect ("popup_requested", self.create_popup_menu)
+		thought.connect ("create_link", self.create_link)
+		thought.connect ("claim_unending_link", self.claim_unending_link)
+		thought.connect ("update_view", self.update_view)
+		thought.connect ("finish_editing", self.finish_editing)
+		thought.connect ("delete_thought", self.delete_thought)
+		
+		if not self.primary_thought:
+			self.make_primary (thought)
+		for x in self.selected:
+			self.link (x, thought)
+		self.select_thought (thought, None)
+		self.begin_editing (thought)
+		
+	def delete_thought (self, thought):
+		# TODO: FIXME
+		pass
+
+	def delete_selected_thoughts (self):
+		# TODO: FIXME
+		pass
+
+	def global_key_handler (self, keysym):
+		# Use a throw-away dictionary for keysym lookup.
+		# Idea from: http://simon.incutio.com/archive/2004/05/07/switch
+		# Dunno why.  Just trying things out
+		try:
+			{ gtk.keysyms.Delete: self.delete_selected_thoughts,
+			  gtk.keysyms.BackSpace: self.delete_selected_thoughts}[keysym]()
+		except:
+			return False
+		self.invalidate ()
+		return True
+
+	# The great TODO list:
+	# (Note this is taken from scanning through the old MMapArea class below
+	#  It probably misses a few things)
+	# * Loading and Saving
+	# * Linking thoughts
+	# * deletion of thoughts
+	# * Exporting
+	# * Clipboards
+	# * title_changed signal propogation
+	# * Deletion of links
+	# * Strengthening / Weakening
+	# * Selection / making current root
+	# * Handling primary root
+
+
+class MMapAreaOld (gtk.DrawingArea):
 	'''A MindMapArea Widget.  A blank canvas with a collection of child thoughts.\
 	   It is responsible for processing signals and such from the whole area and \
 	   passing these on to the correct child.  It also informs things when to draw'''
@@ -62,10 +347,10 @@ class MMapArea (gtk.DrawingArea):
 						 change_mode        = (gobject.SIGNAL_RUN_LAST,
 						 					   gobject.TYPE_NONE,
 						 					   (gobject.TYPE_INT, )),
-						 thought_changed    = (gobject.SIGNAL_RUN_LAST,
+						 change_buffer      = (gobject.SIGNAL_RUN_LAST,
 						 					   gobject.TYPE_NONE,
 						 					   (gobject.TYPE_OBJECT, )),
-						 selection_changed  = (gobject.SIGNAL_RUN_FIRST,
+						 text_selection_changed = (gobject.SIGNAL_RUN_FIRST,
 						 					   gobject.TYPE_NONE,
 						 					   (gobject.TYPE_INT, gobject.TYPE_INT, gobject.TYPE_STRING)))
 
@@ -123,7 +408,7 @@ class MMapArea (gtk.DrawingArea):
 			self.make_current_root (thought)
 			self.select_thought (thought)
 			self.watching_movement = True
-		self.emit ("selection_changed", 0, 0, None)
+		self.emit ("text_selection_changed", 0, 0, None)
 		self.invalidate ()
 		return False
 		
@@ -177,10 +462,10 @@ class MMapArea (gtk.DrawingArea):
 				text = self.selected_thoughts[0].text[end:index]
 			else:
 				text = ""
-			self.emit ('selection_changed', index, end, text)
+			self.emit ('text_selection_changed', index, end, text)
 		else:
 			ret = self.handle_key_global (event.keyval)
-			self.emit ('selection_changed', 0, 0, "")
+			self.emit ('text_selection_changed', 0, 0, "")
 		self.invalidate ()
 		return ret
 		
@@ -377,7 +662,7 @@ class MMapArea (gtk.DrawingArea):
 				text = self.selected_thoughts[0].text[end:index]
 			else:
 				text = ""
-			self.emit ('selection_changed', index, end, text)
+			self.emit ('text_selection_changed', index, end, text)
 			self.update_links (self.selected_thoughts[0])
 			self.invalidate ()
 			if handled:
@@ -621,7 +906,7 @@ class MMapArea (gtk.DrawingArea):
 			self.nthoughts = thought.identity + 1
 
 	def select_thought (self, thought):
-		self.emit ("thought_changed", thought.extended_buffer)
+		self.emit ("change_buffer", thought.extended_buffer)
 		self.selected_thoughts = [thought]
 		thought.select ()
 		self.num_selected = 1

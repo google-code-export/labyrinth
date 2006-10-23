@@ -64,15 +64,14 @@ class LabyrinthWindow (gtk.Window):
 			
 		# First, construct the MainArea and connect it all up
 		self.MainArea = MMapArea.MMapArea ()
-		self.MainArea.set_flags (gtk.CAN_FOCUS)
 		self.set_focus_child (self.MainArea)
 		self.MainArea.connect ("title_changed", self.title_changed_cb)
 		self.MainArea.connect ("doc_save", self.doc_save_cb)
 		self.MainArea.connect ("doc_delete", self.doc_del_cb)
 		self.MainArea.connect ("change_mode", self.mode_request_cb)
 		self.MainArea.connect ("button-press-event", self.main_area_focus_cb)
-		self.MainArea.connect ("thought_changed", self.switch_buffer_cb)
-		self.MainArea.connect ("selection_changed", self.selection_changed_cb)
+		self.MainArea.connect ("change_buffer", self.switch_buffer_cb)
+		self.MainArea.connect ("text_selection_changed", self.selection_changed_cb)
 		
 		# Then, construct the menubar and toolbar and hook it all up
 		self.create_ui ()
@@ -310,7 +309,7 @@ class LabyrinthWindow (gtk.Window):
 		self.MainArea.area_close ()
 		del (self)
 		
-	def doc_del_cb (self, w, a):
+	def doc_del_cb (self):
 		self.emit ('window_closed', None)
 		
 	def doc_save_cb (self, widget, doc, top_element):

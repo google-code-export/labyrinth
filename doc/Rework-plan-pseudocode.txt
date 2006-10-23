@@ -1,5 +1,13 @@
 pseudo-code for MMapArea:
 
+signals:
+title_changed
+doc_save
+doc_delete
+change_mode
+thought_changed (extended_view change buffer)
+selection_changed (copy-paste)
+
 fun button_down:
 	object = find_object_at ()
 	
@@ -102,6 +110,17 @@ callback update_view ():
 
 
 pseudo-code for thought:
+
+common signals:
+"select_thought"
+"begin_editing"
+"popup_menu"
+"link_owned"
+"update_view"
+"create_link"
+"finish_editing"
+"delete_thought"
+
 
 fun process_button_down:
 	moving = modmask & ctrl
