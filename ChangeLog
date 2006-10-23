@@ -1,3 +1,16 @@
+2006-10-23 Don Scorgie <DonScorgie@Blueyonder.co.uk>
+
+	(Broken - don't use on real maps)
+	* src/MainWindow.py:
+	Clean up constructor for MainWindow.  It was just taunting me
+	
+	* data/labyrinth-ui.xml:
+	Remove Move Mode from menu and toolbar
+	
+	Branch to fix architecture problems
+	
+=== Rework Branch (status in brackets)===
+
 2006-10-21 Don Scorgie <DonScorgie@Blueyonder.co.uk>
 
 	* README:

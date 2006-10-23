@@ -35,9 +35,9 @@ import ImageThought
 import DrawingThought
 
 MODE_EDITING = 0
-MODE_MOVING = 1
-MODE_IMAGE = 2
-MODE_DRAW = 3
+MODE_IMAGE = 1
+MODE_DRAW = 2
+MODE_MOVING = 999
 
 class MMapArea (gtk.DrawingArea):
 	'''A MindMapArea Widget.  A blank canvas with a collection of child thoughts.\
@@ -451,13 +451,13 @@ class MMapArea (gtk.DrawingArea):
 		self.emit ("title_changed", thought.text, thought)
 		
 	def set_mode (self, mode, invalidate = True):
-		if self.mode == MODE_IMAGE:
-			self.window.set_cursor (gtk.gdk.Cursor (gtk.gdk.LEFT_PTR))
+		#if self.mode == MODE_IMAGE:
+		#	self.window.set_cursor (gtk.gdk.Cursor (gtk.gdk.LEFT_PTR))
 		if mode == MODE_MOVING:
 			for s in self.selected_thoughts:
 				self.finish_editing (s)
 		if (mode == MODE_IMAGE or mode == MODE_DRAW) and invalidate:
-			self.window.set_cursor (gtk.gdk.Cursor (gtk.gdk.CROSSHAIR))
+		#	self.window.set_cursor (gtk.gdk.Cursor (gtk.gdk.CROSSHAIR))
 			self.old_mode = self.mode
 		self.mode = mode
 		if invalidate:
