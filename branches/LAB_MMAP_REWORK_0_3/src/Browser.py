@@ -119,6 +119,7 @@ class Browser (gtk.Window):
 		win.connect ("title-changed", self.map_title_cb)
 		win.connect ("window_closed", self.remove_map_cb)
 		win.connect ("file_saved", self.file_save_cb)
+		win.show ()
 		self.nmap += 1
 		return (num, win)
 	
