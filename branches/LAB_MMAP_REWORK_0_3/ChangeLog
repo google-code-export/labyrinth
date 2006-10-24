@@ -1,5 +1,15 @@
 2006-10-24 Don Scorgie <DonScorgie@Blueyonder.co.uk>
 
+	(Still broken.  Less so)
+	* src/MMapArea.py:
+	Fix some slight syntax errors
+
+	* src/BaseThought.py:
+	Convert BaseThought and ResizableThought to new
+	framework.  Add possible signals to BaseThought
+	Add comments for people wanting to implement their
+	own thoughts.
+
 	(Still broken.  Slightly less so now)
 	* src/MMapArea.py:
 	* src/MainWindow.py:
