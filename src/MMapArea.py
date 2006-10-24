@@ -82,9 +82,9 @@ class MMapArea (gtk.DrawingArea):
 
 		self.thoughts = []
 		self.links = []
-		self.selected_thoughts = []
+		self.selected = []
 		self.num_selected = 0
-		self.primary_thought = None
+		self.primary = None
 		self.editing = None
 		self.pango_context = self.create_pango_context()
 
@@ -134,11 +134,11 @@ class MMapArea (gtk.DrawingArea):
 		if obj:
 			ret = obj.process_button_release (event, self.unending_link, self.mode)
 		elif self.unending_link or event.button == 1:
-			ret = self.create_new_thought (event.get_coords ())
-			if not self.primary_thought:
+			thought = self.create_new_thought (event.get_coords ())
+			if not self.primary:
 				self.make_primary (thought)
 			for x in self.selected:
-				self.link (x, thought)
+				self.create_link (x, None, thought)
 			self.select_thought (thought, None)
 			self.begin_editing (thought)
 		return ret
@@ -195,7 +195,7 @@ class MMapArea (gtk.DrawingArea):
 		if self.primary:
 			print "Warning: Already have a primary root"
 			if self.title_change_handler:
-				self.primary.disconnect ("title_changed")
+				self.primary.disconnect (self.title_change_handler)
 		thought.connect ("title_changed", self.title_changed_cb)
 		self.primary = thought
 		thought.make_primary ()
@@ -209,10 +209,10 @@ class MMapArea (gtk.DrawingArea):
 		self.thoughts.remove (thought)
 		self.thoughts.insert(0,thought)
 
-		if modifiers & gtk.gdk.CONTROL_MASK:
+		if modifiers and modifiers & gtk.gdk.CONTROL_MASK:
 			self.selected.append (thought)
 			thought.select ()
-		elif modifiers & gtk.gdk.SHIFT_MASK:
+		elif modifiers and modifiers & gtk.gdk.SHIFT_MASK:
 			# TODO: This should really be different somehow
 			self.selected.append (thought)
 			thought.select ()
@@ -234,7 +234,7 @@ class MMapArea (gtk.DrawingArea):
 		self.editing = thought
 		thought.begin_editing ()
 
-	def create_link (self, thought, child, thought_coords, child_coords):
+	def create_link (self, thought, thought_coords = None, child = None, child_coords = None):
 		if child:
 			for x in self.links:
 				if x.connects (thought, child):
@@ -348,6 +348,7 @@ class MMapArea (gtk.DrawingArea):
 		thought.connect ("text_selection_changed", self.text_selection_cb)
 		thought.connect ("change_mouse_cursor", self.set_mouse_cursor_cb)
 		thought.connect ("update_links", self.update_links_cb)
+		self.thoughts.insert (0, thought)
 
 		return thought
 
@@ -356,13 +357,13 @@ class MMapArea (gtk.DrawingArea):
 		thought.element.unlink ()
 		self.thoughts.remove (thought)
 		try:
-			self.selected_thoughts.remove (thought)
+			self.selected.remove (thought)
 		except:
 			pass
-		if self.primary_thought == thought:
+		if self.primary == thought:
 			thought.disconnect (self.title_change_handler)
 			self.title_change_handler = None
-			self.primary_thought = None
+			self.primary = None
 			if self.thoughts:
 				self.make_primary (self.thoughts[0])
 		rem_links = []
@@ -374,7 +375,7 @@ class MMapArea (gtk.DrawingArea):
 		del thought
 
 	def delete_selected_thoughts (self):
-		for t in self.selected_thoughts:
+		for t in self.selected:
 			self.delete_thought (t)
 
 	def delete_link (self, link):
@@ -458,25 +459,25 @@ class MMapArea (gtk.DrawingArea):
 		else:
 			self.emit ("doc_delete")
 
-	def text_selection (self, thought, start, end, text):
+	def text_selection_cb (self, thought, start, end, text):
 		self.emit ("text_selection_changed", start, end, text)
 
 	def copy_clipboard (self, clip):
-		if len (self.selected_thoughts) != 1:
+		if len (self.selected) != 1:
 			return
-		self.selected_thoughts[0].copy_text (clip)
+		self.selected[0].copy_text (clip)
 
 
 	def cut_clipboard (self, clip):
-		if len (self.selected_thoughts) != 1:
+		if len (self.selected) != 1:
 			return
-		self.selected_thoughts[0].cut_text (clip)
+		self.selected[0].cut_text (clip)
 
 
 	def paste_clipboard (self, clip):
-		if len (self.selected_thoughts) != 1:
+		if len (self.selected) != 1:
 			return
-		self.selected_thoughts[0].paste_text (clip)
+		self.selected[0].paste_text (clip)
 
 	def export (self, context, width, height, native):
 		context.rectangle (0, 0, width, height)
@@ -520,8 +521,8 @@ class MMapArea (gtk.DrawingArea):
 		return (maxx,maxy)
 
 	def get_selection_bounds (self):
-		if len (self.selected_thoughts) == 0:
-			return self.selected_thoughts[0].index, self.selected_thoughts[0].end_index
+		if len (self.selected) == 1:
+			return self.selected[0].index, self.selected[0].end_index
 		else:
 			return None, None
 
