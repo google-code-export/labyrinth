@@ -85,6 +85,7 @@ class MMapArea (gtk.DrawingArea):
 		self.selected_thoughts = []
 		self.num_selected = 0
 		self.primary_thought = None
+		self.editing = None
 		self.pango_context = self.create_pango_context()
 
 		self.unending_link = None
@@ -123,7 +124,7 @@ class MMapArea (gtk.DrawingArea):
 		if obj:
 			ret = obj.process_button_down (event, self.mode)
 		elif event.button == 3:
-			ret = self.create_popup_menu (event.coords, MENU_EMPTY_SPACE)
+			ret = self.create_popup_menu (event.get_coords (), MENU_EMPTY_SPACE)
 		return ret
 
 	def button_release (self, widget, event):
@@ -133,7 +134,7 @@ class MMapArea (gtk.DrawingArea):
 		if obj:
 			ret = obj.process_button_release (event, self.unending_link, self.mode)
 		elif self.unending_link or event.button == 1:
-			ret = self.create_new_thought (event.coords ())
+			ret = self.create_new_thought (event.get_coords ())
 			if not self.primary_thought:
 				self.make_primary (thought)
 			for x in self.selected:
@@ -237,9 +238,12 @@ class MMapArea (gtk.DrawingArea):
 		if child:
 			for x in self.links:
 				if x.connects (thought, child):
-					x.change_strength (thought, child)
+					if not x.change_strength (thought, child):
+						self.delete_link (x)
 					return
 			link = Links.Link (self.save, parent = thought, child = child)
+			element = link.get_save_element ()
+			self.element.appendChild (element)
 			self.links.append (link)
 		else:
 			if self.unending_link:
@@ -249,6 +253,11 @@ class MMapArea (gtk.DrawingArea):
 
 	def set_mouse_cursor_cb (self, thought, cursor_type):
 		self.window.set_cursor (gtk.gdk.Cursor (cursor_type))
+
+	def update_links_cb (self, thought):
+		for x in self.links:
+			if x.uses (thought):
+				x.find_ends ()
 
 	def claim_unending_link (self, thought):
 		if not self.unending_link:
@@ -338,6 +347,7 @@ class MMapArea (gtk.DrawingArea):
 		thought.connect ("delete_thought", self.delete_thought)
 		thought.connect ("text_selection_changed", self.text_selection_cb)
 		thought.connect ("change_mouse_cursor", self.set_mouse_cursor_cb)
+		thought.connect ("update_links", self.update_links_cb)
 
 		return thought
 
@@ -432,7 +442,7 @@ class MMapArea (gtk.DrawingArea):
 					child = t
 				if parent and child:
 					break
-			l.set_ends (parent, child)
+			l.set_parent_child (parent, child)
 			if not l.parent or not l.child:
 				del_links.append (l)
 		for l in del_links:

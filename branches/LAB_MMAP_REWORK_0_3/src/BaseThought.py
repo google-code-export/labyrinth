@@ -58,7 +58,10 @@ class BaseThought (gobject.GObject):
 						 						   (gobject.TYPE_INT, gobject.TYPE_INT, gobject.TYPE_STRING)),
 						 change_mouse_cursor    = (gobject.SIGNAL_RUN_FIRST,
 						 						   gobject.TYPE_NONE,
-						 						   (gobject.TYPE_INT,)))
+						 						   (gobject.TYPE_INT,)),
+						 update_links			= (gobject.SIGNAL_RUN_LAST,
+						 						   gobject.TYPE_NONE,
+						 						   ()))
 
 	# The first thing that should be called is this constructor
 	# It sets some basic properties of all thoughts and should be called
