@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Labyrinth; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, 
+# Foundation, Inc., 51 Franklin St, Fifth Floor,
 # Boston, MA  02110-1301  USA
 #
 
@@ -25,6 +25,133 @@ import utils
 import TextBufferMarkup
 
 class BaseThought (gobject.GObject):
+	''' The basic class to derive other thoughts from. \
+		Instructions for creating derivative thought types are  \
+		given as comments'''
+	# These are general signals.  They are available to all thoughts to
+	# emit.  If you emit other signals, the chances are they'll be ignored
+	# by the MMapArea.  It's you're responsiblity to catch and handle them.
+	# All these signals are handled correctly by the MMapArea.
+	__gsignals__ = dict (select_thought      = (gobject.SIGNAL_RUN_FIRST,
+											    gobject.TYPE_NONE,
+											    (gobject.TYPE_PYOBJECT,)),
+						 begin_editing       = (gobject.SIGNAL_RUN_FIRST,
+						 					    gobject.TYPE_NONE,
+						 					    ()),
+						 popup_menu          = (gobject.SIGNAL_RUN_FIRST,
+						 					    gobject.TYPE_NONE,
+						 					    (gobject.TYPE_PYOBJECT, gobject.TYPE_INT)),
+						 claim_unending_link = (gobject.SIGNAL_RUN_FIRST,
+						 						gobject.TYPE_NONE,
+						 						()),
+						 update_view		 = (gobject.SIGNAL_RUN_LAST,
+						 						gobject.TYPE_NONE,
+						 						()),
+						 finish_editing		 = (gobject.SIGNAL_RUN_FIRST,
+						 						gobject.TYPE_NONE,
+						 						()),
+						 delete_thought		 = (gobject.SIGNAL_RUN_LAST,
+						 						gobject.TYPE_NONE,
+						 						()),
+						 text_selection_changed = (gobject.SIGNAL_RUN_LAST,
+						 						   gobject.TYPE_NONE,
+						 						   (gobject.TYPE_INT, gobject.TYPE_INT, gobject.TYPE_STRING)),
+						 change_mouse_cursor    = (gobject.SIGNAL_RUN_FIRST,
+						 						   gobject.TYPE_NONE,
+						 						   (gobject.TYPE_INT,)))
+
+	# The first thing that should be called is this constructor
+	# It sets some basic properties of all thoughts and should be called
+	# before you start doing you're own thing with thoughts
+	# save: the save document passed into the derived constructor
+	# elem_type: a string representing the thought type (e.g. "image_thought")
+	def __init__ (self, save, elem_type):
+		super (BaseThought, self).__init__()
+		self.ul = self.ur = None
+		self.am_primary = False
+		self.am_selected = False
+		self.editing = False
+		self.identity = -1
+		self.index = 0
+		self.end_index = 0
+		self.text = "Unknown Thought Type"
+		self.extended_buffer = TextBufferMarkup.InteractivePangoBuffer ()
+		self.extended_buffer.set_text("")
+
+		self.element = save.createElement (elem_type)
+		extended_elem = save.createElement ("Extended")
+		self.extended_element = save.createTextNode ("Extended")
+		self.element.appendChild (extended_elem)
+		extended_elem.appendChild (self.extended_element)
+
+	# These are self-explanitory.  You probably don't want to
+	# overwrite these methods, unless you have a very good reason
+	def get_save_element (self):
+		return self.element
+
+	def make_primary (self):
+		self.am_primary = True
+
+	def select (self):
+		self.am_selected = True
+
+	def unselect (self):
+		self.am_selected = False
+
+	def get_max_area (self):
+		if not self.ul or not self.lr:
+			return 999,999,-999,-999
+		return self.ul[0], self.ul[1], self.lr[0], self.lr[1]
+
+	# All the rest of these should be handled within you're thought
+	# type, supposing you actually want to handle them.
+	# You almost certianly do want to ;)
+	def process_button_down (self, event, mode):
+		pass
+
+	def process_button_release (self, event, mode):
+		pass
+
+	def process_key_press (self, event, mode):
+		pass
+
+	def handle_motion (self, event, mode):
+		pass
+
+	def includes (self, coords, mode):
+		pass
+
+	def begin_editing (self):
+		pass
+
+	def finish_editing (self):
+		pass
+
+	def draw (self, context):
+		pass
+
+	def load (self, node):
+		pass
+
+	def update_save (self):
+		pass
+
+	def copy_text (self, clip):
+		pass
+
+	def cut_text (self, clip):
+		pass
+
+	def paste_text (self, clip):
+		pass
+
+	def export (self, context, move_x, move_y):
+		pass
+
+	def commit_text (self, im_context, string, mode):
+		pass
+
+class BaseThoughtOld (gobject.GObject):
 	''' the basic class to derive other thoughts from'''
 	__gsignals__ = dict (delete_thought		= (gobject.SIGNAL_RUN_FIRST,
 											   gobject.TYPE_NONE,
@@ -38,7 +165,7 @@ class BaseThought (gobject.GObject):
 						 update_view		= (gobject.SIGNAL_RUN_LAST,
 						 					   gobject.TYPE_NONE,
 						 					   (gobject.TYPE_BOOLEAN, )))
-	
+
 	def __init__ (self):
 		super (BaseThought, self).__init__()
 		self.am_primary = False
@@ -50,76 +177,157 @@ class BaseThought (gobject.GObject):
 		self.text = "Unknown Thought Type"
 		self.extended_buffer = TextBufferMarkup.InteractivePangoBuffer ()
 		self.extended_buffer.set_text("")
-		
-		
+
+
 	def includes (self, coords, allow_resize = False, state=None):
 		print "Warning: includes is not implemented for one thought type"
 		return False
-		
+
 	def draw (self, context):
 		print "Warning: drawing is not implemented for one thought type"
 		return
-		
+
 	def handle_movement (self, coords, move=True, edit_mode = False):
 		print "Warning: handle_movement is not implemented for this node type"
 		return
-	
+
 	def handle_key (self, string, keysym, state):
 		print "Warning: handle_key is not implemented for this node type"
 		return False
-		
+
 	def find_connection (self, other, export=False):
 		print "Warning: Unable to find connection for this node type"
 		return (None, None)
-	
+
 	def update_bbox (self):
 		return
-	
+
 	def update_save (self):
 		print "Warning: Saving is not working for a node type.  This node will not be saved."
 		return
-		
+
 	def load_data (self, node):
 		print "Warning: Loading this type of node isn't allowed just now."
 		return
-		
+
 	def begin_editing (self, im_context = None):
 		print "Warning: Cannot edit this thought type"
 		return
-	
+
 	def finish_editing (self):
 		print "Warning: This node type cannot be edited"
 		return
-	
+
 	def become_active_root (self):
 		print "Warning: This type of node cannot become root"
 		return
-		
+
 	def finish_active_root (self):
 		print "Warning: This type of not isn't currently root"
 		return
-		
+
 	def become_primary_thought (self):
 		print "Warning: Become primary root isn't implemented for this node type"
 		return
 
 	def want_movement (self):
 		return False
-	
+
 	def finish_motion (self):
 		return
-	
+
 	def export (self, context, move_x, move_y):
 		return
-	
+
 	def select (self):
 		return
-		
+
 	def get_max_area (self):
 		return (0, 0, 0, 0)
-		
-	
-class ResizableThought (BaseThought):
+
+class ResizableThought (gobject.GObject):
+	''' A resizable thought base class.  This allows the sides and corners \
+	    of the thought to be dragged around.  It only provides the very basic \
+	    functionality.  Other stuff must be done within the derived classes'''
+
+	# Possible types of resizing - where the user selected to resize
+	RESIZE_NONE = 0
+	RESIZE_LEFT = 1
+	RESIZE_RIGHT = 2
+	RESIZE_TOP = 3
+	RESIZE_BOTTOM = 4
+	RESIZE_UL = 5
+	RESIZE_UR = 6
+	RESIZE_LL = 7
+	RESIZE_LR = 8
+
+	def __init__ (self, save, elem_type):
+		super (ResizableThought, self).__init__(save, elem_type)
+		self.sensitive = 5
+		self.resizing = False
+
+	def includes (self, coords):
+		if not self.ul or not self.lr:
+			return False
+
+		inside = (coords[0] < self.lr[0] + self.sensitive) and \
+				 (coords[0] > self.ul[0] - self.sensitive) and \
+			     (coords[1] < self.lr[1] + self.sensitive) and \
+			     (coords[1] > self.ul[1] - self.sensitive)
+
+		self.resizing = self.RESIZE_NONE
+		self.motion_coords = coords
+
+		if inside:
+			# 2 cases: 1. The click was within the main area
+			#		   2. The click was near the border
+			# In the first case, we handle as normal
+			# In the second case, we want to intercept all the fun thats
+			# going to happen so we can resize the thought
+			if abs (coords[0] - self.ul[0]) < self.sensitive:
+				# its near the top edge somewhere
+				if abs (coords[1] - self.ul[1]) < self.sensitive:
+				# Its in the ul corner
+					self.resizing = self.RESIZE_UL
+					self.emit ("change_cursor", gtk.gdk.TOP_LEFT_CORNER)
+				elif abs (coords[1] - self.lr[1]) < self.sensitive:
+				# Its in the ll corner
+					self.resizing = self.RESIZE_LL
+					self.emit ("change_cursor", gtk.gdk.BOTTOM_LEFT_CORNER)
+				elif coords[1] < self.lr[1] and coords[1] > self.ul[1]:
+				#anywhere else along the left edge
+					self.resizing = self.RESIZE_LEFT
+					self.emit ("change_cursor", gtk.gdk.LEFT_SIDE)
+			elif abs (coords[0] - self.lr[0]) < self.sensitive:
+				if abs (coords[1] - self.ul[1]) < self.sensitive:
+				# Its in the UR corner
+					self.resizing = self.RESIZE_UR
+					self.emit ("change_cursor", gtk.gdk.TOP_RIGHT_CORNER)
+				elif abs (coords[1] - self.lr[1]) < self.sensitive:
+				# Its in the lr corner
+					self.resizing = self.RESIZE_LR
+					self.emit ("change_cursor", gtk.gdk.BOTTOM_RIGHT_CORNER)
+				elif coords[1] < self.lr[1] and coords[1] > self.ul[1]:
+				#anywhere else along the right edge
+					self.resizing = self.RESIZE_RIGHT
+					self.emit ("change_cursor", gtk.gdk.RIGHT_SIDE)
+			elif abs (coords[1] - self.ul[1]) < self.sensitive and \
+				 (coords[0] < self.lr[0] and coords[0] > self.ul[0]):
+				# Along the top edge somewhere
+					self.resizing = self.RESIZE_TOP
+					self.emit ("change_cursor", gtk.gdk.TOP_SIDE)
+			elif abs (coords[1] - self.lr[1]) < self.sensitive and \
+				 (coords[0] < self.lr[0] and coords[0] > self.ul[0]):
+				# Along the bottom edge somewhere
+					self.resizing = self.RESIZE_BOTTOM
+					self.emit ("change_cursor", gtk.gdk.BOTTOM_SIDE)
+			else:
+				self.emit ("change_cursor", gtk.gdk.LEFT_PTR)
+		return inside
+
+
+
+class ResizableThoughtOld (BaseThought):
 	MOTION_NONE = 0
 	MOTION_LEFT = 1
 	MOTION_RIGHT = 2
@@ -129,12 +337,7 @@ class ResizableThought (BaseThought):
 	MOTION_UR = 6
 	MOTION_LL = 7
 	MOTION_LR = 8
-	
-	def __init__ (self):
-		super (ResizableThought, self).__init__()
-		self.sensitive = 5
-		self.resizing = False
-		
+
 	def includes (self, coords, allow_resize = False, state = None):
 		self.resizing = self.MOTION_NONE
 		self.motion_coords = coords
@@ -199,8 +402,8 @@ class ResizableThought (BaseThought):
 					return True
 		return coords[0] < self.lr[0] and coords[0] > self.ul[0] and \
 			   coords[1] < self.lr[1] and coords[1] > self.ul[1]
-		
-		
+
+
 	def draw (self, context):
 		context.move_to (self.ul[0], self.ul[1])
 		context.line_to (self.ul[0], self.lr[1])
@@ -212,7 +415,7 @@ class ResizableThought (BaseThought):
 		context.set_source_rgb (0,0,0)
 		context.stroke ()
 		return
-		
+
 	def handle_movement (self, coords, edit_mode = False):
 		diffx = coords[0] - self.motion_coords[0]
 		diffy = coords[1] - self.motion_coords[1]
@@ -240,12 +443,12 @@ class ResizableThought (BaseThought):
 			self.lr = (self.lr[0], self.lr[1]+diffy)
 		elif self.resizing == self.MOTION_LR:
 			self.lr = (self.lr[0]+diffx, self.lr[1]+diffy)
-		
+
 		return
-		
+
 	def want_movement (self):
 		return self.resizing != self.MOTION_NONE
-		
+
 	def finish_motion (self):
 		self.resizing = self.MOTION_NONE
 		return

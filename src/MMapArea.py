@@ -44,6 +44,9 @@ TYPE_TEXT = 0
 TYPE_IMAGE = 1
 TYPE_DRAW = 2
 
+# TODO: Need to expand to support popup menus
+MENU_EMPTY_SPACE = 0
+
 # Note: This is (atm) very broken.  It will allow you to create new canvases, but not
 # create new thoughts or load existing maps.
 # To get it working either fix the TODO list at the bottom of the class, implement the
@@ -83,7 +86,6 @@ class MMapArea (gtk.DrawingArea):
 		self.num_selected = 0
 		self.primary_thought = None
 		self.pango_context = self.create_pango_context()
-		self.watching_movement = False
 
 		self.unending_link = None
 		self.nthoughts = 0
@@ -119,10 +121,9 @@ class MMapArea (gtk.DrawingArea):
 		obj = self.find_object_at (event.get_coords())
 
 		if obj:
-			ret = obj.process_button_down (event)
+			ret = obj.process_button_down (event, self.mode)
 		elif event.button == 3:
-			ret = self.create_popup_menu (event.coords)
-		# TODO: paste text from primary_selection on button == 2
+			ret = self.create_popup_menu (event.coords, MENU_EMPTY_SPACE)
 		return ret
 
 	def button_release (self, widget, event):
@@ -130,7 +131,7 @@ class MMapArea (gtk.DrawingArea):
 		obj = self.find_object_at (event.get_coords ())
 
 		if obj:
-			ret = obj.process_button_release (event, self.unending_link)
+			ret = obj.process_button_release (event, self.unending_link, self.mode)
 		elif self.unending_link or event.button == 1:
 			ret = self.create_new_thought (event.coords ())
 			if not self.primary_thought:
@@ -143,7 +144,7 @@ class MMapArea (gtk.DrawingArea):
 
 	def key_press (self, widget, event):
 		if not self.im_context.filter_keypress (event):
-			if len(self.selected) != 1 or not self.selected[0].process_key_press (event):
+			if len(self.selected) != 1 or not self.selected[0].process_key_press (event, self.mode):
 				return self.global_key_handler ()
 		return False
 
@@ -155,17 +156,22 @@ class MMapArea (gtk.DrawingArea):
 		if self.unending_link:
 			self.unending_link.set_end (event.get_coords())
 			self.invalidate ()
+			return True
 
 		obj = self.find_object_at (event.get_coords())
 		if obj:
-			obj.handle_motion (event)
+			obj.handle_motion (event, self.mode)
+		elif self.mode == MODE_IMAGE or self.mode == MODE_DRAW:
+			self.window.set_cursor (gtk.gdk.Cursor (gtk.gdk.CROSSHAIR))
+		else:
+			self.window.set_cursor (gtk.gdk.Cursor (gtk.gdk.LEFT_PTR))
 
 	def find_object_at (self, coords):
 		for x in self.thoughts:
-			if x.includes (coords):
+			if x.includes (coords, self.mode):
 				return x
 		for x in self.links:
-			if x.included (coords):
+			if x.includes (coords, self.mode):
 				return x
 		return None
 
@@ -173,7 +179,7 @@ class MMapArea (gtk.DrawingArea):
 		self.old_mode = self.mode
 		self.mode = mode
 
-		if (mode == MODE_IMAGE or mode == MODE_DRAW):
+		if mode == MODE_IMAGE or mode == MODE_DRAW:
 			self.window.set_cursor (gtk.gdk.Cursor (gtk.gdk.CROSSHAIR))
 		else:
 			self.window.set_cursor (gtk.gdk.Cursor (gtk.gdk.LEFT_PTR))
@@ -215,7 +221,7 @@ class MMapArea (gtk.DrawingArea):
 			self.selected = [thought]
 		if len(self.selected) == 1:
 			self.emit ("change_buffer", thought.extended_buffer)
-			self.commit_handler = self.im_context.connect ("commit", thought.commit_text)
+			self.commit_handler = self.im_context.connect ("commit", thought.commit_text, self.mode)
 		else:
 			self.emit ("change_buffer", None)
 
@@ -241,6 +247,9 @@ class MMapArea (gtk.DrawingArea):
 			self.unending_link = Links.Link (self.save, parent = thought, start_coords = thought_coords,
 											 end_coords = child_coords)
 
+	def set_mouse_cursor_cb (self, thought, cursor_type):
+		self.window.set_cursor (gtk.gdk.Cursor (cursor_type))
+
 	def claim_unending_link (self, thought):
 		if not self.unending_link:
 			return
@@ -254,7 +263,7 @@ class MMapArea (gtk.DrawingArea):
 		self.links.append (self.unending_link)
 		self.unending_link = None
 
-	def create_popup_menu (self, thought, coords):
+	def create_popup_menu (self, thought, coords, menu_type):
 		# TODO: FIXME
 		print "Popup menu requested"
 		return
@@ -296,7 +305,7 @@ class MMapArea (gtk.DrawingArea):
 		for t in self.thoughts:
 			t.draw (context)
 
-	def create_new_thought (self, coords, thought_type = None):
+	def create_new_thought (self, coords, thought_type = None, loading = False):
 		if self.editing:
 			self.editing.finish_editing ()
 
@@ -306,11 +315,11 @@ class MMapArea (gtk.DrawingArea):
 			type = self.mode
 
 		if type == TYPE_TEXT:
-			thought = TextThought.TextThought (coords, self.pango_context, self.nthoughts, self.save)
+			thought = TextThought.TextThought (coords, self.pango_context, self.nthoughts, self.save, loading)
 		elif type == TYPE_IMAGE:
-			thought = ImageThought.ImageThought (coords, self.pango_context, self.nthoughts, self.save)
+			thought = ImageThought.ImageThought (coords, self.pango_context, self.nthoughts, self.save, loading)
 		elif type == TYPE_DRAWING:
-			thought = DrawingThought.DrawingThought (coords, self.pango_context, self.nthoughts, self.save)
+			thought = DrawingThought.DrawingThought (coords, self.pango_context, self.nthoughts, self.save, loading)
 		if not thought.okay ():
 			print "Something very, very bad happened"
 		elif type == TYPE_IMAGE:
@@ -328,6 +337,7 @@ class MMapArea (gtk.DrawingArea):
 		thought.connect ("finish_editing", self.finish_editing)
 		thought.connect ("delete_thought", self.delete_thought)
 		thought.connect ("text_selection_changed", self.text_selection_cb)
+		thought.connect ("change_mouse_cursor", self.set_mouse_cursor_cb)
 
 		return thought
 
@@ -386,11 +396,11 @@ class MMapArea (gtk.DrawingArea):
 	def load_thyself (self, top_element, doc):
 		for node in top_element.childNodes:
 			if node.nodeName == "thought":
-				self.load_thought (node, TYPE_TEXT)
+				self.load_thought (node, TYPE_TEXT, loading = True)
 			elif node.nodeName == "image_thought":
-				self.load_thought (node, TYPE_IMAGE)
+				self.load_thought (node, TYPE_IMAGE, loading = True)
 			elif node.nodeName == "drawing_thought":
-				self.load_thought (node, TYPE_DRAWING)
+				self.load_thought (node, TYPE_DRAWING, loading = True)
 			elif node.nodeName == "link":
 				self.load_link (node)
 			else:
@@ -444,19 +454,19 @@ class MMapArea (gtk.DrawingArea):
 	def copy_clipboard (self, clip):
 		if len (self.selected_thoughts) != 1:
 			return
-		self.selected_thoughts[0].copy_text ()
+		self.selected_thoughts[0].copy_text (clip)
 
 
 	def cut_clipboard (self, clip):
 		if len (self.selected_thoughts) != 1:
 			return
-		self.selected_thoughts[0].cut_text ()
+		self.selected_thoughts[0].cut_text (clip)
 
 
 	def paste_clipboard (self, clip):
 		if len (self.selected_thoughts) != 1:
 			return
-		self.selected_thoughts[0].paste_text ()
+		self.selected_thoughts[0].paste_text (clip)
 
 	def export (self, context, width, height, native):
 		context.rectangle (0, 0, width, height)
