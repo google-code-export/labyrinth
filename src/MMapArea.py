@@ -16,7 +16,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Labyrinth; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, 
+# Foundation, Inc., 51 Franklin St, Fifth Floor,
 # Boston, MA  02110-1301  USA
 #
 
@@ -54,7 +54,7 @@ class MMapArea (gtk.DrawingArea):
 	'''A MindMapArea Widget.  A blank canvas with a collection of child thoughts.\
 	   It is responsible for processing signals and such from the whole area and \
 	   passing these on to the correct child.  It also informs things when to draw'''
-	   
+
 	__gsignals__ = dict (title_changed		= (gobject.SIGNAL_RUN_FIRST,
 											   gobject.TYPE_NONE,
 											   (gobject.TYPE_STRING, )),
@@ -82,20 +82,19 @@ class MMapArea (gtk.DrawingArea):
 		self.selected_thoughts = []
 		self.num_selected = 0
 		self.primary_thought = None
-		self.current_root = None
 		self.pango_context = self.create_pango_context()
 		self.watching_movement = False
 
 		self.unending_link = None
 		self.nthoughts = 0
-		
+
 		impl = dom.getDOMImplementation()
 		self.save = impl.createDocument("http://www.donscorgie.blueyonder.co.uk/labns", "MMap", None)
 		self.element = self.save.documentElement
 		self.im_context = gtk.IMMulticontext ()
-		
+
 		self.mode = MODE_EDITING
-		
+
 		self.connect ("expose_event", self.expose)
 		self.connect ("button_release_event", self.button_release)
 		self.connect ("button_press_event", self.button_down)
@@ -103,47 +102,55 @@ class MMapArea (gtk.DrawingArea):
 		self.connect ("key_press_event", self.key_press)
 		self.connect ("key_release_event", self.key_release)
 		self.commit_handler = None
-		
+		self.title_change_handler = None
+
 		self.set_events (gtk.gdk.KEY_PRESS_MASK |
 						 gtk.gdk.KEY_RELEASE_MASK |
 						 gtk.gdk.BUTTON_PRESS_MASK |
 						 gtk.gdk.BUTTON_RELEASE_MASK |
 						 gtk.gdk.POINTER_MOTION_MASK
 						)
-						
+
 		self.set_flags (gtk.CAN_FOCUS)
 
 
 	def button_down (self, widget, event):
 		ret = False
 		obj = self.find_object_at (event.get_coords())
-		
+
 		if obj:
 			ret = obj.process_button_down (event)
 		elif event.button == 3:
 			ret = self.create_popup_menu (event.coords)
+		# TODO: paste text from primary_selection on button == 2
 		return ret
-	
+
 	def button_release (self, widget, event):
 		ret = False
 		obj = self.find_object_at (event.get_coords ())
-		
+
 		if obj:
 			ret = obj.process_button_release (event, self.unending_link)
 		elif self.unending_link or event.button == 1:
 			ret = self.create_new_thought (event.coords ())
+			if not self.primary_thought:
+				self.make_primary (thought)
+			for x in self.selected:
+				self.link (x, thought)
+			self.select_thought (thought, None)
+			self.begin_editing (thought)
 		return ret
-	
+
 	def key_press (self, widget, event):
 		if not self.im_context.filter_keypress (event):
 			if len(self.selected) != 1 or not self.selected[0].process_key_press (event):
 				return self.global_key_handler ()
 		return False
-				
+
 	def key_release (self, widget, event):
 		self.im_context.filter_keypress (event)
 		return True
-		
+
 	def motion (self, widget, event):
 		if self.unending_link:
 			self.unending_link.set_end (event.get_coords())
@@ -151,8 +158,8 @@ class MMapArea (gtk.DrawingArea):
 
 		obj = self.find_object_at (event.get_coords())
 		if obj:
-			obj.handle_motion (event)	
-	
+			obj.handle_motion (event)
+
 	def find_object_at (self, coords):
 		for x in self.thoughts:
 			if x.includes (coords):
@@ -161,8 +168,32 @@ class MMapArea (gtk.DrawingArea):
 			if x.included (coords):
 				return x
 		return None
-	
-	def select_thought (self, thought, modifiers):	
+
+	def set_mode (self, mode):
+		self.old_mode = self.mode
+		self.mode = mode
+
+		if (mode == MODE_IMAGE or mode == MODE_DRAW):
+			self.window.set_cursor (gtk.gdk.Cursor (gtk.gdk.CROSSHAIR))
+		else:
+			self.window.set_cursor (gtk.gdk.Cursor (gtk.gdk.LEFT_PTR))
+
+		self.mode = mode
+		self.invalidate ()
+
+	def title_changed_cb (self, widget, new_title):
+		self.emit ("title_changed", new_title)
+
+	def make_primary (self, thought):
+		if self.primary:
+			print "Warning: Already have a primary root"
+			if self.title_change_handler:
+				self.primary.disconnect ("title_changed")
+		thought.connect ("title_changed", self.title_changed_cb)
+		self.primary = thought
+		thought.make_primary ()
+
+	def select_thought (self, thought, modifiers):
 		if self.commit_handler:
 			self.im_context.disconnect (self.commit_handler)
 			self.commit_handler = None
@@ -170,7 +201,7 @@ class MMapArea (gtk.DrawingArea):
 			self.finish_editing ()
 		self.thoughts.remove (thought)
 		self.thoughts.insert(0,thought)
-		
+
 		if modifiers & gtk.gdk.CONTROL_MASK:
 			self.selected.append (thought)
 			thought.select ()
@@ -183,8 +214,11 @@ class MMapArea (gtk.DrawingArea):
 				x.unselect ()
 			self.selected = [thought]
 		if len(self.selected) == 1:
+			self.emit ("change_buffer", thought.extended_buffer)
 			self.commit_handler = self.im_context.connect ("commit", thought.commit_text)
-			
+		else:
+			self.emit ("change_buffer", None)
+
 	def begin_editing (self, thought):
 		if self.selected.count (thought) or len (self.selected != 1):
 			return
@@ -195,43 +229,50 @@ class MMapArea (gtk.DrawingArea):
 
 	def create_link (self, thought, child, thought_coords, child_coords):
 		if child:
-			link = Links.Link (parent = thought, child = child)
+			for x in self.links:
+				if x.connects (thought, child):
+					x.change_strength (thought, child)
+					return
+			link = Links.Link (self.save, parent = thought, child = child)
 			self.links.append (link)
 		else:
 			if self.unending_link:
 				del self.unending_link
-			self.unending_link = Links.Link (parent = thought, start_coords = thought_coords,
+			self.unending_link = Links.Link (self.save, parent = thought, start_coords = thought_coords,
 											 end_coords = child_coords)
-	
+
 	def claim_unending_link (self, thought):
 		if not self.unending_link:
 			return
+		for x in self.links:
+			if x.connects (self.unending_link.parent, thought):
+				x.change_strength (self.unending_link.parent, thought)
+				del self.unending_link
+				self.unending_link = None
+				return
 		self.unending_link.set_child (thought)
 		self.links.append (self.unending_link)
 		self.unending_link = None
-		
+
 	def create_popup_menu (self, thought, coords):
 		# TODO: FIXME
 		print "Popup menu requested"
 		return
-	
+
 	def finish_editing (self, thought = None):
 		if thought and thought != self.editing:
 			return
 		self.editing.finish_editing ()
 		self.editing = None
-		
+
 	def update_view (self, thought):
 		self.invalidate (True)
 
-	def invalidate (self, urgent = True):
+	def invalidate (self):
 		'''Helper function to invalidate the entire screen, forcing a redraw'''
-		ntime = time.time ()
-		if ntime - self.time_elapsed > 0.025 or urgent:
-			alloc = self.get_allocation ()
-			rect = gtk.gdk.Rectangle (0, 0, alloc.width, alloc.height)
-			self.window.invalidate_rect (rect, True)
-			self.time_elapsed = ntime
+		alloc = self.get_allocation ()
+		rect = gtk.gdk.Rectangle (0, 0, alloc.width, alloc.height)
+		self.window.invalidate_rect (rect, True)
 
 	def expose (self, widget, event):
 		'''Expose event.  Calls the draw function'''
@@ -258,18 +299,23 @@ class MMapArea (gtk.DrawingArea):
 	def create_new_thought (self, coords, thought_type = None):
 		if self.editing:
 			self.editing.finish_editing ()
-		
+
 		if thought_type:
 			type = thought_type
 		else:
 			type = self.mode
-		
+
 		if type == TYPE_TEXT:
 			thought = TextThought.TextThought (coords, self.pango_context, self.nthoughts, self.save)
 		elif type == TYPE_IMAGE:
 			thought = ImageThought.ImageThought (coords, self.pango_context, self.nthoughts, self.save)
 		elif type == TYPE_DRAWING:
 			thought = DrawingThought.DrawingThought (coords, self.pango_context, self.nthoughts, self.save)
+		if not thought.okay ():
+			print "Something very, very bad happened"
+		elif type == TYPE_IMAGE:
+			self.emit ("change_mode", self.old_mode)
+
 		self.nthoughts += 1
 		element = thought.get_save_element ()
 		self.element.appendChild (element)
@@ -281,21 +327,40 @@ class MMapArea (gtk.DrawingArea):
 		thought.connect ("update_view", self.update_view)
 		thought.connect ("finish_editing", self.finish_editing)
 		thought.connect ("delete_thought", self.delete_thought)
-		
-		if not self.primary_thought:
-			self.make_primary (thought)
-		for x in self.selected:
-			self.link (x, thought)
-		self.select_thought (thought, None)
-		self.begin_editing (thought)
-		
+		thought.connect ("text_selection_changed", self.text_selection_cb)
+
+		return thought
+
 	def delete_thought (self, thought):
-		# TODO: FIXME
-		pass
+		self.element.removeChild (thought.element)
+		thought.element.unlink ()
+		self.thoughts.remove (thought)
+		try:
+			self.selected_thoughts.remove (thought)
+		except:
+			pass
+		if self.primary_thought == thought:
+			thought.disconnect (self.title_change_handler)
+			self.title_change_handler = None
+			self.primary_thought = None
+			if self.thoughts:
+				self.make_primary (self.thoughts[0])
+		rem_links = []
+		for l in self.links:
+			if l.uses (thought):
+				rem_links.append (l)
+		for l in rem_links:
+			self.delete_link (l)
+		del thought
 
 	def delete_selected_thoughts (self):
-		# TODO: FIXME
-		pass
+		for t in self.selected_thoughts:
+			self.delete_thought (t)
+
+	def delete_link (self, link):
+		self.element.removeChild (link.element)
+		link.element.unlink ()
+		self.links.remove (link)
 
 	def global_key_handler (self, keysym):
 		# Use a throw-away dictionary for keysym lookup.
@@ -309,26 +374,143 @@ class MMapArea (gtk.DrawingArea):
 		self.invalidate ()
 		return True
 
-	# The great TODO list:
-	# (Note this is taken from scanning through the old MMapArea class below
-	#  It probably misses a few things)
-	# * Loading and Saving
-	# * Linking thoughts
-	# * deletion of thoughts
-	# * Exporting
-	# * Clipboards
-	# * title_changed signal propogation
-	# * Deletion of links
-	# * Strengthening / Weakening
-	# * Selection / making current root
-	# * Handling primary root
+	def load_thought (self, node, type):
+		thought = create_new_thought (None, type)
+		thought.load (node)
+
+	def load_link (self, node):
+		link = Links.Link (self.save)
+		link.load (node)
+		self.links.append (link)
+
+	def load_thyself (self, top_element, doc):
+		for node in top_element.childNodes:
+			if node.nodeName == "thought":
+				self.load_thought (node, TYPE_TEXT)
+			elif node.nodeName == "image_thought":
+				self.load_thought (node, TYPE_IMAGE)
+			elif node.nodeName == "drawing_thought":
+				self.load_thought (node, TYPE_DRAWING)
+			elif node.nodeName == "link":
+				self.load_link (node)
+			else:
+				print "Warning: Unknown element type.  Ignoring: "+node.nodeName
+
+		self.finish_loading ()
+
+	def finish_loading (self):
+		# Possible TODO: This all assumes we've been given a proper,
+		# consistant file.  It should fallback nicely, but...
+		# First, find the primary root:
+		for t in self.thoughts:
+			if t.am_primary:
+				self.make_primary (t)
+			if t.am_selected:
+				self.select_thought (t)
+			if t.editing:
+				self.begin_editing (t)
+		del_links = []
+		for l in self.links:
+			if l.parent_number == -1 and l.child_number == -1:
+				del_links.append (l)
+				continue
+			parent = child = None
+			for t in self.thoughts:
+				if t.identity == l.parent_number:
+					parent = t
+				elif t.identity == l.child_number:
+					child = t
+				if parent and child:
+					break
+			l.set_ends (parent, child)
+			if not l.parent or not l.child:
+				del_links.append (l)
+		for l in del_links:
+			self.delete_link (l)
+
+	def save_thyself (self):
+		for t in self.thoughts:
+			t.update_save ()
+		for l in self.links:
+			l.update_save ()
+		if len(self.thoughts) > 0:
+			self.emit ("doc_save", self.save, self.element)
+		else:
+			self.emit ("doc_delete")
+
+	def text_selection (self, thought, start, end, text):
+		self.emit ("text_selection_changed", start, end, text)
+
+	def copy_clipboard (self, clip):
+		if len (self.selected_thoughts) != 1:
+			return
+		self.selected_thoughts[0].copy_text ()
+
+
+	def cut_clipboard (self, clip):
+		if len (self.selected_thoughts) != 1:
+			return
+		self.selected_thoughts[0].cut_text ()
+
+
+	def paste_clipboard (self, clip):
+		if len (self.selected_thoughts) != 1:
+			return
+		self.selected_thoughts[0].paste_text ()
+
+	def export (self, context, width, height, native):
+		context.rectangle (0, 0, width, height)
+		context.clip ()
+		context.set_source_rgb (1.0,1.0,1.0)
+		context.move_to (0,0)
+		context.paint ()
+		context.set_source_rgb (0.0,0.0,0.0)
+		if not native:
+			move_x = self.move_x
+			move_y = self.move_y
+		else:
+			move_x = 0
+			move_y = 0
+		for l in self.links:
+			l.export (context, move_x, move_y)
+		for t in self.thoughts:
+			t.export (context, move_x, move_y)
+
+	def get_max_area (self):
+		minx = 999
+		maxx = -999
+		miny = 999
+		maxy = -999
+
+		for t in self.thoughts:
+			mx,my,mmx,mmy = t.get_max_area ()
+			if mx < minx:
+				minx = mx
+			if my < miny:
+				miny = my
+			if mmx > maxx:
+				maxx = mmx
+			if mmy > maxy:
+				maxy = mmy
+		# Add a 10px border around all
+		self.move_x = 10-minx
+		self.move_y = 10-miny
+		maxx = maxx-minx+20
+		maxy = maxy-miny+20
+		return (maxx,maxy)
+
+	def get_selection_bounds (self):
+		if len (self.selected_thoughts) == 0:
+			return self.selected_thoughts[0].index, self.selected_thoughts[0].end_index
+		else:
+			return None, None
 
 
 class MMapAreaOld (gtk.DrawingArea):
 	'''A MindMapArea Widget.  A blank canvas with a collection of child thoughts.\
 	   It is responsible for processing signals and such from the whole area and \
 	   passing these on to the correct child.  It also informs things when to draw'''
-	   
+
 	__gsignals__ = dict (single_click_event = (gobject.SIGNAL_RUN_FIRST,
 											   gobject.TYPE_NONE,
 											   (gobject.TYPE_PYOBJECT, gobject.TYPE_INT, gobject.TYPE_INT)),
@@ -371,7 +553,7 @@ class MMapAreaOld (gtk.DrawingArea):
 		self.connect ("key_release_event", self.key_release)
 		self.connect ("single_click_event", self.single_click)
 		self.connect ("double_click_event", self.double_click)
-		
+
 		self.set_events (gtk.gdk.KEY_PRESS_MASK |
 						 gtk.gdk.BUTTON_PRESS_MASK |
 						 gtk.gdk.BUTTON_RELEASE_MASK |
@@ -386,21 +568,21 @@ class MMapAreaOld (gtk.DrawingArea):
 		self.unended_link = None
 		self.nthoughts = 0
 		self.b_down = False
-		
+
 		impl = dom.getDOMImplementation()
 		self.save = impl.createDocument("http://www.donscorgie.blueyonder.co.uk/labns", "MMap", None)
 		self.element = self.save.documentElement
 		self.im_context = gtk.IMMulticontext ()
-		
+
 		self.time_elapsed = 0.0
-	
+
 # Signal Handlers for the Map Class
-	
+
 	def button_down (self, widget, event):
 		self.b_down = True
-			
+
 		thought = self.find_thought_at (event.get_coords (), event.state)
-		
+
 		if thought:
 			for t in self.selected_thoughts:
 				if t != thought:
@@ -411,17 +593,17 @@ class MMapAreaOld (gtk.DrawingArea):
 		self.emit ("text_selection_changed", 0, 0, None)
 		self.invalidate ()
 		return False
-		
-	def button_release (self, widget, event):	
+
+	def button_release (self, widget, event):
 		self.b_down = False
 		self.watching_movement = False
 		if len (self.selected_thoughts) > 0:
 			self.selected_thoughts[0].finish_motion ()
 			self.update_links (self.selected_thoughts[0])
-		
+
 		self.prev_release_time = self.release_time
 		self.release_time = event.get_time ()
-		
+
 		if self.prev_release_time and (self.release_time - self.prev_release_time) < 700:
 			self.release_time = None
 			self.emit ("double_click_event", event.get_coords (), event.state, event.button)
@@ -429,7 +611,7 @@ class MMapAreaOld (gtk.DrawingArea):
 			self.emit ("single_click_event", event.get_coords (), event.state, event.button)
 		self.invalidate ()
 		return False
-		
+
 	def motion (self, widget, event):
 		if not self.watching_movement:
 			return False
@@ -442,10 +624,10 @@ class MMapAreaOld (gtk.DrawingArea):
 		for s in self.selected_thoughts:
 			s.handle_movement (event.get_coords ())
 			self.update_links (s)
-		
-		self.invalidate ()	
+
+		self.invalidate ()
 		return False
-		
+
 	def key_press (self, widget, event):
 		if self.mode == MODE_EDITING:
 			if self.num_selected > 1 or self.num_selected == 0:
@@ -468,11 +650,11 @@ class MMapAreaOld (gtk.DrawingArea):
 			self.emit ('text_selection_changed', 0, 0, "")
 		self.invalidate ()
 		return ret
-		
+
 	def key_release (self, widget, event):
 		self.im_context.filter_keypress (event)
 		return True
-		
+
 	def expose (self, widget, event):
 		'''Expose event.  Calls the draw function'''
 		context = self.window.cairo_create ()
@@ -484,11 +666,11 @@ class MMapAreaOld (gtk.DrawingArea):
 		if button != 1:
 			return
 		thought = self.find_thought_at (coords, state)
-		
+
 		#We may have a dangling link.  Need to destroy it now
 		self.unended_link = None
 
-		if thought:            
+		if thought:
 			if self.num_selected == 1 and thought != self.selected_thoughts[0]:
 				self.link_thoughts (self.selected_thoughts[0], thought)
 			elif self.num_selected == 1:
@@ -510,18 +692,18 @@ class MMapAreaOld (gtk.DrawingArea):
 			return
 
 		thought = self.find_thought_at (coords, state)
-		
+
 		if self.mode == MODE_EDITING:
 			if thought:
 				self.edit_thought (thought)
 			else:
 				self.create_new_thought (coords)
-		
+
 		self.invalidate ()
 		return
 
 	def title_changed_cb (self, widget, new_title, obj):
-		self.emit ("title_changed", new_title, obj)		   
+		self.emit ("title_changed", new_title, obj)
 
 # Other functions
 
@@ -540,7 +722,7 @@ class MMapAreaOld (gtk.DrawingArea):
 			self.unended_link.draw (context)
 		for t in self.thoughts:
 			t.draw (context)
-	
+
 	def invalidate (self, ignore = None, urgent = True):
 		'''Helper function to invalidate the entire screen, forcing a redraw'''
 		ntime = time.time ()
@@ -549,7 +731,7 @@ class MMapAreaOld (gtk.DrawingArea):
 			rect = gtk.gdk.Rectangle (0, 0, alloc.width, alloc.height)
 			self.window.invalidate_rect (rect, True)
 			self.time_elapsed = ntime
-	
+
 	def find_thought_at (self, coords, state):
 		'''Checks the given coords and sees if there are any thoughts there'''
 		if self.mode == MODE_EDITING and self.b_down:
@@ -564,7 +746,7 @@ class MMapAreaOld (gtk.DrawingArea):
 	def create_new_thought (self, coords):
 		for t in self.selected_thoughts:
 			self.finish_editing (t)
-	
+
 		elem = self.save.createElement ("thought")
 		text_element = self.save.createTextNode ("GOOBAH")
 		extended_elem = self.save.createElement ("Extended")
@@ -581,7 +763,7 @@ class MMapAreaOld (gtk.DrawingArea):
 			self.link_thoughts (self.current_root, thought)
 		else:
 			self.make_current_root (thought)
-			
+
 		if not self.primary_thought:
 			self.make_primary_root (thought)
 		thought.connect ("delete_thought", self.delete_thought)
@@ -590,7 +772,7 @@ class MMapAreaOld (gtk.DrawingArea):
 		self.edit_thought (thought)
 		self.thoughts.append (thought)
 		self.invalidate ()
-		
+
 
 	def load_thought (self, node):
 		elem = self.save.createElement ("thought")
@@ -610,13 +792,13 @@ class MMapAreaOld (gtk.DrawingArea):
 			self.nthoughts = thought.identity+1
 		thought.connect ("update_view", self.invalidate)
 		thought.connect ("delete_thought", self.delete_thought)
-		
+
 	def load_link (self, node):
 		link_elem = self.save.createElement ("link")
 		self.element.appendChild (link_elem)
 		link = Links.Link (element = link_elem, load=node)
 		self.links.append (link)
-	
+
 	def finish_loading (self):
 		# First, find the primary root:
 		for t in self.thoughts:
@@ -648,10 +830,10 @@ class MMapAreaOld (gtk.DrawingArea):
 				del_links.append (l)
 		for l in del_links:
 			self.delete_link (l)
-			
+
 	def handle_movement (self, coords):
 		# We can only be called (for now) if a node is selected.  Plan accordingly.
-		
+
 		if self.selected_thoughts[0].want_movement ():
 			handled = self.selected_thoughts[0].handle_movement (coords, False, self.mode == MODE_EDITING)
 			index = self.selected_thoughts[0].index
@@ -672,7 +854,7 @@ class MMapAreaOld (gtk.DrawingArea):
 		self.unended_link.set_new_end (coords)
 		self.invalidate ()
 		return
-		
+
 	def handle_key_global (self, keysym):
 		# Use a throw-away dictionary for keysym lookup.
 		# Idea from: http://simon.incutio.com/archive/2004/05/07/switch
@@ -684,7 +866,7 @@ class MMapAreaOld (gtk.DrawingArea):
 			return False
 		self.invalidate ()
 		return True
-	
+
 	def link_thoughts (self, parent, child):
 		link = None
 		for l in self.links:
@@ -716,7 +898,7 @@ class MMapAreaOld (gtk.DrawingArea):
 		if thought:
 			thought.become_active_root ()
 		self.invalidate ()
-		
+
 	def unselect_all (self):
 		self.num_selected = 0
 		self.selected_thoughts = []
@@ -734,7 +916,7 @@ class MMapAreaOld (gtk.DrawingArea):
 		self.current_root = self.primary_thought
 		self.current_root.become_active_root ()
 		self.emit ("title_changed", thought.text, thought)
-		
+
 	def set_mode (self, mode, invalidate = True):
 		#if self.mode == MODE_IMAGE:
 		#	self.window.set_cursor (gtk.gdk.Cursor (gtk.gdk.LEFT_PTR))
@@ -747,7 +929,7 @@ class MMapAreaOld (gtk.DrawingArea):
 		self.mode = mode
 		if invalidate:
 			self.invalidate ()
-	
+
 	def save_thyself (self):
 		for t in self.thoughts:
 			t.update_save ()
@@ -757,7 +939,7 @@ class MMapAreaOld (gtk.DrawingArea):
 			self.emit ("doc_save", self.save, self.element)
 		else:
 			self.emit ("doc_delete", None)
-		
+
 	def load_thyself (self, top_element, doc):
 		for node in top_element.childNodes:
 			if node.nodeName == "thought":
@@ -770,12 +952,12 @@ class MMapAreaOld (gtk.DrawingArea):
 				self.load_drawing (node)
 			else:
 				print "Warning: Unknown element type.  Ignoring: "+node.nodeName
-				
+
 		self.finish_loading ()
-		
+
 	def finish_editing (self, thought):
-		do_del = thought.finish_editing ()		
-		
+		do_del = thought.finish_editing ()
+
 		if do_del:
 			self.delete_thought (thought)
 		else:
@@ -786,7 +968,7 @@ class MMapAreaOld (gtk.DrawingArea):
 	def update_links (self, affected_thought):
 		for l in self.links:
 			if l.uses (affected_thought):
-				l.update ()		
+				l.update ()
 
 	def delete_link (self, link):
 		self.element.removeChild (link.element)
@@ -839,7 +1021,7 @@ class MMapAreaOld (gtk.DrawingArea):
 			self.element.appendChild (elem)
 			thought = ImageThought.ImageThought (fname, coords, self.nthoughts, elem, extended=extended_element)
 			if not thought.okay:
-				dialog = gtk.MessageDialog (None, gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT, 
+				dialog = gtk.MessageDialog (None, gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
 											gtk.MESSAGE_WARNING, gtk.BUTTONS_CLOSE,
 											_("Error loading file"))
 				dialog.format_secondary_text (_("%s could not be read.  Please ensure its a valid image."%fname))
@@ -852,10 +1034,10 @@ class MMapAreaOld (gtk.DrawingArea):
 				self.link_thoughts (self.current_root, thought)
 			else:
 				self.make_current_root (thought)
-			
+
 			if not self.primary_thought:
 				self.make_primary_root (thought)
-		
+
 			self.thoughts.append (thought)
 			self.invalidate ()
 
@@ -914,9 +1096,9 @@ class MMapAreaOld (gtk.DrawingArea):
 	def area_close (self):
 		self.save_thyself ()
 
-		
+
 	def cursor_change_cb (self, thought, cursor_type, a):
-		self.window.set_cursor (gtk.gdk.Cursor (cursor_type))	
+		self.window.set_cursor (gtk.gdk.Cursor (cursor_type))
 		return
 
 	def export (self, context, width, height, native):
@@ -942,7 +1124,7 @@ class MMapAreaOld (gtk.DrawingArea):
 		maxx = -999
 		miny = 999
 		maxy = -999
-		
+
 		for t in self.thoughts:
 			mx,my,mmx,mmy = t.get_max_area ()
 			if mx < minx:
@@ -965,26 +1147,26 @@ class MMapAreaOld (gtk.DrawingArea):
 			return self.selected_thoughts[0].index, self.selected_thoughts[0].end_index
 		else:
 			return None, None
-	
+
 	def copy_clipboard (self, clip):
 		index = self.selected_thoughts[0].index
 		end = self.selected_thoughts[0].end_index
-		
-		if end > index:
-			clip.set_text (self.selected_thoughts[0].text[index:end])
-		else:
-			clip.set_text (self.selected_thoughts[0].text[end:index])
-	
-	def cut_clipboard (self, clip):
-		index = self.selected_thoughts[0].index
-		end = self.selected_thoughts[0].end_index
-		
+
 		if end > index:
 			clip.set_text (self.selected_thoughts[0].text[index:end])
 		else:
 			clip.set_text (self.selected_thoughts[0].text[end:index])
 
-		# Be really cheeky here and use already existing functions - 
+	def cut_clipboard (self, clip):
+		index = self.selected_thoughts[0].index
+		end = self.selected_thoughts[0].end_index
+
+		if end > index:
+			clip.set_text (self.selected_thoughts[0].text[index:end])
+		else:
+			clip.set_text (self.selected_thoughts[0].text[end:index])
+
+		# Be really cheeky here and use already existing functions -
 		# Pretend a delete key event occured ;)
 		self.selected_thoughts[0].handle_key (None, gtk.keysyms.Delete, 0)
 		self.invalidate ()
@@ -994,5 +1176,3 @@ class MMapAreaOld (gtk.DrawingArea):
 		# Again, cheekily hitch onto the already existing infrastructure
 		self.selected_thoughts[0].handle_key (text, None, None)
 		self.invalidate ()
-		
-		
