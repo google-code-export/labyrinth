@@ -74,6 +74,9 @@ class Link (gobject.GObject):
 	def uses (self, thought):
 		return self.parent == thought or self.child == thought
 
+	def find_ends (self):
+		(self.start, self.end) = self.parent.find_connection (self.child)
+
 	def draw (self, context):
 		if not self.start or not self.end:
 			return

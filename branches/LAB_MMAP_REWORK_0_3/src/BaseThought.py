@@ -38,7 +38,7 @@ class BaseThought (gobject.GObject):
 						 begin_editing       = (gobject.SIGNAL_RUN_FIRST,
 						 					    gobject.TYPE_NONE,
 						 					    ()),
-						 popup_menu          = (gobject.SIGNAL_RUN_FIRST,
+						 popup_requested     = (gobject.SIGNAL_RUN_FIRST,
 						 					    gobject.TYPE_NONE,
 						 					    (gobject.TYPE_PYOBJECT, gobject.TYPE_INT)),
 						 claim_unending_link = (gobject.SIGNAL_RUN_FIRST,
@@ -47,6 +47,12 @@ class BaseThought (gobject.GObject):
 						 update_view		 = (gobject.SIGNAL_RUN_LAST,
 						 						gobject.TYPE_NONE,
 						 						()),
+						 create_link		 = (gobject.SIGNAL_RUN_FIRST,
+						 						gobject.TYPE_NONE,
+						 						(gobject.TYPE_PYOBJECT,)),
+						 title_changed       = (gobject.SIGNAL_RUN_LAST,
+						 						gobject.TYPE_NONE,
+						 						(gobject.TYPE_STRING,)),
 						 finish_editing		 = (gobject.SIGNAL_RUN_FIRST,
 						 						gobject.TYPE_NONE,
 						 						()),
@@ -69,15 +75,19 @@ class BaseThought (gobject.GObject):
 	# save: the save document passed into the derived constructor
 	# elem_type: a string representing the thought type (e.g. "image_thought")
 	def __init__ (self, save, elem_type):
+		# Note: Once the thought has been successfully initialised (i.e. at the end
+		# of the constructor) you MUST set all_okay to True
+		# Otherwise, bad things will happen.
+		self.all_okay = False
 		super (BaseThought, self).__init__()
-		self.ul = self.ur = None
+		self.ul = self.lr = None
 		self.am_primary = False
 		self.am_selected = False
 		self.editing = False
 		self.identity = -1
 		self.index = 0
 		self.end_index = 0
-		self.text = "Unknown Thought Type"
+		self.text = ""
 		self.extended_buffer = TextBufferMarkup.InteractivePangoBuffer ()
 		self.extended_buffer.set_text("")
 
@@ -105,6 +115,25 @@ class BaseThought (gobject.GObject):
 		if not self.ul or not self.lr:
 			return 999,999,-999,-999
 		return self.ul[0], self.ul[1], self.lr[0], self.lr[1]
+
+	def okay (self):
+		return self.all_okay
+
+	# This, you may want to change.  Though, doing so will only affect
+	# thoughts that are "parents"
+	def find_connection (self, other):
+		if self.editing or other.editing:
+			return None, None
+		if not self.ul or not self.lr or not other.ul \
+		or not other.lr:
+			return None, None
+
+		xfrom = self.ul[0]-((self.ul[0]-self.lr[0]) / 2.)
+		yfrom = self.ul[1]-((self.ul[1]-self.lr[1]) / 2.)
+		xto = other.ul[0]-((other.ul[0]-other.lr[0]) / 2.)
+		yto = other.ul[1]-((other.ul[1]-other.lr[1]) / 2.)
+
+		return (xfrom, yfrom), (xto, yto)
 
 	# All the rest of these should be handled within you're thought
 	# type, supposing you actually want to handle them.

@@ -16,7 +16,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Labyrinth; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, 
+# Foundation, Inc., 51 Franklin St, Fifth Floor,
 # Boston, MA  02110-1301  USA
 #
 
@@ -31,7 +31,40 @@ import xml.dom.minidom as dom
 import xml.dom
 
 class TextThought (BaseThought.BaseThought):
-	
+	def __init__ (self, coords, pango_context, thought_number, save, loading):
+		super (TextThought, self).__init__(save, "thought")
+
+		self.index = 0
+		self.end_index = 0
+		self.bytes = ""
+		self.bindex = 0
+		self.text_location = coords
+		self.text_element = save.createTextNode ("GOOBAH")
+
+		self.b_f_i = self.bindex_from_index
+		margin = utils.margin_required (utils.STYLE_NORMAL)
+		if coords:
+			self.ul = (coords[0]-margin[0], coords[1] - margin[1])
+		else:
+			self.ul = None
+		self.all_okay = True
+
+	def bindex_from_index (self, index):
+		if index == 0:
+			return 0
+		bind = 0
+		nbytes = 0
+		for x in self.bytes:
+			nbytes += int (x)
+			bind+=1
+			if nbytes == index:
+				break
+		if nbytes < index:
+			bind = len(self.bytes)
+		return bind
+
+class TextThoughtOld (BaseThought.BaseThought):
+
 	def __init__ (self, coords=None, pango=None, ident=None, element=None, text_element=None, \
 				  load=None, extended_element = None):
 		super (TextThought, self).__init__()
@@ -57,12 +90,12 @@ class TextThought (BaseThought.BaseThought):
 			self.ul = (coords[0]-margin[0], coords[1] - margin[1])
 		else:
 			self.ul = None
-		
+
 		if not load:
 			self.identity = ident
 		else:
 			self.load_data (load)
-			
+
 	def begin_editing (self, im_context = None):
 		if not self.editing:
 			self.im = im_context
@@ -73,7 +106,7 @@ class TextThought (BaseThought.BaseThought):
 			self.commit_handle = im_context.connect ("commit", self.commit_text_cb)
 			self.delete_handle = im_context.connect ("delete-surrounding", self.delete_surround_cb)
 			self.surrounding_handle = im_context.connect ("retrieve-surrounding", self.get_surrounding_cb)
-		
+
 
 	def finish_editing (self):
 		if self.editing:
@@ -89,14 +122,14 @@ class TextThought (BaseThought.BaseThought):
 			self.delete_handle = 0
 			self.surrounding_handle = 0
 		return False
-		
+
 	def includes (self, coords, allow_resize = False, state=0):
 		if not self.ul or not self.lr:
 			self.update_bbox ()
-		
+
 		inside = coords[0] < self.lr[0] and coords[0] > self.ul[0] and \
 		coords[1] < self.lr[1] and coords[1] > self.ul[1]
-		
+
 		if inside:
 			desc = pango.FontDescription ("normal 12")
 			font = self.pango_context.load_font (desc)
@@ -116,19 +149,19 @@ class TextThought (BaseThought.BaseThought):
 			if delete:
 				self.emit ("delete_thought", None, None)
 		return inside
-		
+
 	def become_primary_thought (self):
 		self.am_primary = True
-	
+
 	def become_active_root (self):
 		self.am_root = True
-		
+
 	def finish_active_root (self):
-		self.am_root = False	
-	
+		self.am_root = False
+
 	def select (self):
 		pass
-	
+
 	def draw (self, context):
 		desc = pango.FontDescription ("normal 12")
 		font = self.pango_context.load_font (desc)
@@ -143,7 +176,7 @@ class TextThought (BaseThought.BaseThought):
 				return
 
 			utils.draw_thought_outline (context, self.ul, self.lr, self.am_root, self.am_primary, utils.STYLE_NORMAL)
-			
+
 		else:
 			(strong, weak) = layout.get_cursor_pos (self.index)
 			(startx, starty, curx,cury) = strong
@@ -170,8 +203,8 @@ class TextThought (BaseThought.BaseThought):
 		context.move_to (self.text_location[0], self.text_location[1])
 		context.show_layout (layout)
 		context.set_source_rgb (0,0,0)
-		context.stroke () 
-		
+		context.stroke ()
+
 	def export (self, context, move_x, move_y):
 		desc = pango.FontDescription ("normal 12")
 		font = self.pango_context.load_font (desc)
@@ -185,24 +218,24 @@ class TextThought (BaseThought.BaseThought):
 		context.move_to (self.text_location[0]+move_x, self.text_location[1]+move_y)
 		context.show_layout (layout)
 		context.set_source_rgb (0,0,0)
-		context.stroke () 
+		context.stroke ()
 
 	def update_bbox (self):
 		desc = pango.FontDescription ("normal 12")
 		font = self.pango_context.load_font (desc)
 		layout = pango.Layout (self.pango_context)
 		layout.set_text (self.text)
-		
+
 		(x,y) = layout.get_pixel_size ()
 		margin = utils.margin_required (utils.STYLE_NORMAL)
 		self.text_location = (self.ul[0] + margin[0], self.ul[1] + margin[1])
 		self.lr = (x + self.text_location[0]+margin[2], y + self.text_location[1] + margin[3])
-		
+
 	def handle_movement (self, coords, move = True, edit_mode = False):
 		if edit_mode:
 			inside = coords[0] < self.lr[0] and coords[0] > self.ul[0] and \
 			coords[1] < self.lr[1] and coords[1] > self.ul[1]
-		
+
 			if inside:
 				desc = pango.FontDescription ("normal 12")
 				font = self.pango_context.load_font (desc)
@@ -220,17 +253,17 @@ class TextThought (BaseThought.BaseThought):
 				if delete:
 					self.emit ("delete_thought", None, None)
 			return inside
-	
+
 		else:
 			if not self.ul or not self.lr:
 				print "Warning: Unable to update: Things are broken.  Returning"
 				return
-		
+
 			self.ul = (coords[0], coords[1])
 			self.update_bbox ()
-		
+
 	def handle_key (self, string, keysym, modifiers):
-		# TODO: Handle ctrl+relavent special chars	 
+		# TODO: Handle ctrl+relavent special chars
 		# Handle escape (finish editing)
 		if string:
 			self.add_text (string)
@@ -240,9 +273,9 @@ class TextThought (BaseThought.BaseThought):
 		if modifiers & gtk.gdk.CONTROL_MASK:
 			# Ignore ctrl mask for now
 			return
-		
+
 		mod = modifiers & gtk.gdk.SHIFT_MASK
-		
+
 		try:
 			{ gtk.keysyms.Delete   : self.delete_char		,
 			  gtk.keysyms.BackSpace: self.backspace_char	,
@@ -257,7 +290,7 @@ class TextThought (BaseThought.BaseThought):
 		self.bindex = self.bindex_from_index (self.index)
 		self.emit ("title_changed", self.text, 65)
 		return True
-		
+
 	def add_text (self, string):
 		if self.index > self.end_index:
 			left = self.text[:self.end_index]
@@ -280,7 +313,7 @@ class TextThought (BaseThought.BaseThought):
 		self.bytes = bleft + str(len(string)) + bright
 		self.bindex += 1
 		self.end_index = self.index
-		
+
 	def delete_char (self, mod):
 		if self.index > self.end_index:
 			left = self.text[:self.end_index]
@@ -323,24 +356,24 @@ class TextThought (BaseThought.BaseThought):
 		self.text = left+right
 		self.bytes = bleft+bright
 		self.end_index = self.index
-		
+
 		if self.index < 0:
 			self.index = 0
-			
+
 	def move_index_back (self, mod):
 		if self.index <= 0:
 			return
 		self.index-=int(self.bytes[self.bindex-1])
 		if not mod:
 			self.end_index = self.index
-		
+
 	def move_index_forward (self, mod):
 		if self.index >= len(self.text):
 			return
 		self.index+=int(self.bytes[self.bindex])
 		if not mod:
 			self.end_index = self.index
-		
+
 	def move_index_up (self, mod):
 		tmp = self.text.decode ()
 		lines = tmp.splitlines ()
@@ -374,7 +407,7 @@ class TextThought (BaseThought.BaseThought):
 		self.index = self.index_from_bindex (self.bindex)
 		if not mod:
 			self.end_index = self.index
-	
+
 	def move_index_down (self, mod):
 		tmp = self.text.decode ()
 		lines = tmp.splitlines ()
@@ -398,7 +431,7 @@ class TextThought (BaseThought.BaseThought):
 		self.index = self.index_from_bindex (self.bindex)
 		if not mod:
 			self.end_index = self.index
-			
+
 	def move_index_home (self, mod):
 		lines = self.text.splitlines ()
 		loc = 0
@@ -411,7 +444,7 @@ class TextThought (BaseThought.BaseThought):
 					self.end_index = self.index
 				return
 			line += 1
-			
+
 	def move_index_end (self, mod):
 		lines = self.text.splitlines ()
 		loc = 0
@@ -438,7 +471,7 @@ class TextThought (BaseThought.BaseThought):
 		yto = other.ul[1]-((other.ul[1]-other.lr[1]) / 2.)
 
 		return ((xfrom, yfrom), (xto, yto))
-			
+
 	def update_save (self):
 		self.text_element.replaceWholeText (self.text)
 		text = self.extended_buffer.get_text ()
@@ -497,7 +530,7 @@ class TextThought (BaseThought.BaseThought):
 			self.am_primary = True
 		else:
 			self.am_primary = False
-			
+
 		for n in node.childNodes:
 			if n.nodeType == n.TEXT_NODE:
 				self.text = n.data
@@ -528,7 +561,7 @@ class TextThought (BaseThought.BaseThought):
 		self.bindex = self.b_f_i (self.index)
 		self.text = tmp
 		self.update_bbox ()
-		
+
 	def load_add_parent (self, parent):
 		self.parents.append (parent)
 
@@ -546,7 +579,7 @@ class TextThought (BaseThought.BaseThought):
 
 	# I don't know if these signals are required.  I've yet to come across
 	# them while testing.  Nevertheless, I'm going to hook them up for now
-		
+
 	def delete_surround_cb (self, context, offset, n_chars):
 		del_index = offset
 		del_end = del_index + nchars
@@ -576,8 +609,8 @@ class TextThought (BaseThought.BaseThought):
 		self.bindex = del_bindex
 		self.end_index = self.index
 		self.emit ("update_view", True)
-	
-	
+
+
 	def get_surrounding_cb (self, context):
 		self.im.set_surroundings (self.text, -1, self.bindex)
 
@@ -587,7 +620,7 @@ class TextThought (BaseThought.BaseThought):
 		index = 0
 		for x in range(bindex):
 			index += int(self.bytes[x])
-			
+
 		return index
 
 	def bindex_from_index (self, index):
@@ -603,5 +636,3 @@ class TextThought (BaseThought.BaseThought):
 		if nbytes < index:
 			bind = len(self.bytes)
 		return bind
-
-

@@ -1,5 +1,15 @@
 2006-10-24 Don Scorgie <DonScorgie@Blueyonder.co.uk>
 
+	(Still Broken.  Doesn't die when clicking on the map in edit mode)
+	* src/BaseThought.py:
+	* src/MMapArea.py:
+	* src/Links.py:
+	Fix some stuff that appears to have been forgotten
+
+	* src/TextThought.py:
+	Begin to move TextThought across (enough to not die when
+	clicking on the map in edit mode)
+
 	(Broken)
 	* src/MMapArea.py:
 	More errors fixed
