@@ -1,5 +1,16 @@
 2006-10-24 Don Scorgie <DonScorgie@Blueyonder.co.uk>
 
+	(Broken)
+	* src/MMapArea.py:
+	More errors fixed
+
+	* src/Links.py:
+	Move links to their new framework (which is surprisingly
+	similar to the old one)
+
+	* src/BaseThought.py:
+	Add "update_links" signal to allow links to be moved easily
+
 	(Still broken.  Less so)
 	* src/MMapArea.py:
 	Fix some slight syntax errors
