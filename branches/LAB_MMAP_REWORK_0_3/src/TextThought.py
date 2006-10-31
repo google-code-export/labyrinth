@@ -125,7 +125,6 @@ class TextThought (BaseThought.BaseThought):
 			if not self.ul or not self.lr:
 				print "Warning: Trying to draw unfinished box "+str(self.identity)+".  Aborting."
 				return
-
 			utils.draw_thought_outline (context, self.ul, self.lr, self.am_selected, self.am_primary, utils.STYLE_NORMAL)
 
 		else:
@@ -163,9 +162,200 @@ class TextThought (BaseThought.BaseThought):
 		if not self.editing:
 			return
 		self.editing = False
+		self.emit ("update_links")
 		if len (self.text) == 0:
 			self.emit ("delete_thought")
 
+	def includes (self, coords, mode):
+		if not self.ul or not self.lr:
+			return False
+
+		inside = (coords[0] < self.lr[0] + self.sensitive) and \
+				 (coords[0] > self.ul[0] - self.sensitive) and \
+			     (coords[1] < self.lr[1] + self.sensitive) and \
+			     (coords[1] > self.ul[1] - self.sensitive)
+		if inside and self.editing:
+			self.emit ("change_mouse_cursor", gtk.gdk.XTERM)
+		return inside
+
+	def process_key_press (self, event, mode):
+		modifiers = gtk.accelerator_get_default_mod_mask ()
+		shift = event.state & modifiers == gtk.gdk.SHIFT_MASK
+		handled = True
+		if (event.state & modifiers) & gtk.gdk.CONTROL_MASK:
+			pass
+			#TODO: Handle ctrl-?? etc.
+		elif event.keyval == gtk.keysyms.Escape:
+			self.emit ("finish_editing")
+		elif event.keyval == gtk.keysyms.Left:
+			self.move_index_back (shift)
+		elif event.keyval == gtk.keysyms.Right:
+			self.move_index_forward (shift)
+		elif event.keyval == gtk.keysyms.Up:
+			self.move_index_up (shift)
+		elif event.keyval == gtk.keysyms.Down:
+			self.move_index_down (shift)
+		elif event.keyval == gtk.keysyms.Home:
+			self.move_index_home (shift)
+		elif event.keyval == gtk.keysyms.End:
+			self.move_index_end (shift)
+		elif event.keyval == gtk.keysyms.BackSpace:
+			self.backspace_char ()
+		elif event.keyval == gtk.keysyms.Delete:
+			self.delete_char ()
+		elif len (event.string) != 0:
+			self.add_text (event.string)
+		else:
+			handled = False
+		self.recalc_edges ()
+		self.emit ("title_changed", self.text)
+		self.bindex = self.bindex_from_index (self.index)
+		self.emit ("update_view")
+		return handled
+
+	def delete_char (self):
+		if self.index > self.end_index:
+			left = self.text[:self.end_index]
+			right = self.text[self.index:]
+			bleft = self.bytes[:self.b_f_i (self.end_index)]
+			bright = self.bytes[self.b_f_i (self.index):]
+			self.index = self.end_index
+		elif self.index < self.end_index:
+			left = self.text[:self.index]
+			right = self.text[self.end_index:]
+			bleft = self.bytes[:self.b_f_i (self.index)]
+			bright = self.bytes[self.b_f_i (self.end_index):]
+		else:
+			left = self.text[:self.index]
+			right = self.text[self.index+int(self.bytes[self.bindex]):]
+			bleft = self.bytes[:self.b_f_i(self.index)]
+			bright = self.bytes[self.b_f_i(self.index)+1:]
+		self.text = left+right
+		self.bytes = bleft+bright
+		self.end_index = self.index
+
+	def backspace_char (self):
+		if self.index > self.end_index:
+			left = self.text[:self.end_index]
+			right = self.text[self.index:]
+			bleft = self.bytes[:self.b_f_i (self.end_index)]
+			bright = self.bytes[self.b_f_i (self.index):]
+			self.index = self.end_index
+		elif self.index < self.end_index:
+			left = self.text[:self.index]
+			right = self.text[self.end_index:]
+			bleft = self.bytes[:self.b_f_i (self.index)]
+			bright = self.bytes[self.b_f_i (self.end_index):]
+		else:
+			left = self.text[:self.index-int(self.bytes[self.bindex-1])]
+			right = self.text[self.index:]
+			bleft = self.bytes[:self.b_f_i(self.index)-1]
+			bright = self.bytes[self.b_f_i(self.index):]
+			self.index-=int(self.bytes[self.bindex-1])
+		self.text = left+right
+		self.bytes = bleft+bright
+		self.end_index = self.index
+
+		if self.index < 0:
+			self.index = 0
+
+	def move_index_back (self, mod):
+		if self.index <= 0:
+			return
+		self.index-=int(self.bytes[self.bindex-1])
+		if not mod:
+			self.end_index = self.index
+
+	def move_index_forward (self, mod):
+		if self.index >= len(self.text):
+			return
+		self.index+=int(self.bytes[self.bindex])
+		if not mod:
+			self.end_index = self.index
+
+	def move_index_up (self, mod):
+		tmp = self.text.decode ()
+		lines = tmp.splitlines ()
+		if len (lines) == 1:
+			return
+		loc = 0
+		line = 0
+		for i in lines:
+			loc += len (i)+1
+			if loc > self.index:
+				loc -= len (i)+1
+				line -= 1
+				break
+			line+=1
+		if line == -1:
+			return
+		elif line >= len (lines):
+			self.bindex -= len (lines[-1])+1
+			self.index = self.index_from_bindex (self.bindex)
+			if not mod:
+				self.end_index = self.index
+			return
+		dist = self.bindex - loc -1
+		self.bindex = loc
+		if dist < len (lines[line]):
+			self.bindex -= (len (lines[line]) - dist)
+		else:
+			self.bindex -= 1
+		if self.bindex < 0:
+			self.bindex = 0
+		self.index = self.index_from_bindex (self.bindex)
+		if not mod:
+			self.end_index = self.index
+
+	def move_index_down (self, mod):
+		tmp = self.text.decode ()
+		lines = tmp.splitlines ()
+		if len (lines) == 1:
+			return
+		loc = 0
+		line = 0
+		for i in lines:
+			loc += len (i)+1
+			if loc > self.bindex:
+				break
+			line += 1
+		if line >= len (lines)-1:
+			return
+		dist = self.bindex - (loc - len (lines[line]))+1
+		self.bindex = loc
+		if dist > len (lines[line+1]):
+			self.bindex += len (lines[line+1])
+		else:
+			self.bindex += dist
+		self.index = self.index_from_bindex (self.bindex)
+		if not mod:
+			self.end_index = self.index
+
+	def move_index_home (self, mod):
+		lines = self.text.splitlines ()
+		loc = 0
+		line = 0
+		for i in lines:
+			loc += len (i) + 1
+			if loc > self.index:
+				self.index = loc-len (i) - 1
+				if not mod:
+					self.end_index = self.index
+				return
+			line += 1
+
+	def move_index_end (self, mod):
+		lines = self.text.splitlines ()
+		loc = 0
+		line = 0
+		for i in lines:
+			loc += len (i)+1
+			if loc > self.index:
+				self.index = loc-1
+				if not mod:
+					self.end_index = self.index
+				return
+			line += 1
 
 
 class TextThoughtOld (BaseThought.BaseThought):
