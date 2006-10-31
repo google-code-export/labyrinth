@@ -40,6 +40,9 @@ class TextThought (BaseThought.BaseThought):
 		self.bindex = 0
 		self.text_location = coords
 		self.text_element = save.createTextNode ("GOOBAH")
+		self.layout = None
+		self.identity = thought_number
+		self.pango_context = pango_context
 
 		self.b_f_i = self.bindex_from_index
 		margin = utils.margin_required (utils.STYLE_NORMAL)
@@ -48,6 +51,16 @@ class TextThought (BaseThought.BaseThought):
 		else:
 			self.ul = None
 		self.all_okay = True
+
+
+	def index_from_bindex (self, bindex):
+		if bindex == 0:
+			return 0
+		index = 0
+		for x in range(bindex):
+			index += int(self.bytes[x])
+
+		return index
 
 	def bindex_from_index (self, index):
 		if index == 0:
@@ -62,6 +75,98 @@ class TextThought (BaseThought.BaseThought):
 		if nbytes < index:
 			bind = len(self.bytes)
 		return bind
+
+	def recalc_edges (self):
+		desc = pango.FontDescription ("normal 12")
+		font = self.pango_context.load_font (desc)
+		del self.layout
+		self.layout = pango.Layout (self.pango_context)
+		self.layout.set_text (self.text)
+		(x,y) = self.layout.get_pixel_size ()
+		margin = utils.margin_required (utils.STYLE_NORMAL)
+		self.text_location = (self.ul[0] + margin[0], self.ul[1] + margin[1])
+		self.lr = (x + self.text_location[0]+margin[2], y + self.text_location[1] + margin[3])
+
+	def commit_text (self, context, string, mode):
+		self.add_text (string)
+		self.recalc_edges ()
+		self.emit ("title_changed", self.text)
+		self.emit ("update_view")
+
+	def add_text (self, string):
+		if self.index > self.end_index:
+			left = self.text[:self.end_index]
+			right = self.text[self.index:]
+			bleft = self.bytes[:self.b_f_i (self.end_index)]
+			bright = self.bytes[self.b_f_i (self.index):]
+			self.index = self.end_index
+		elif self.index < self.end_index:
+			left = self.text[:self.index]
+			right = self.text[self.end_index:]
+			bleft = self.bytes[:self.b_f_i (self.index)]
+			bright = self.bytes[self.b_f_i (self.end_indes):]
+		else:
+			left = self.text[:self.index]
+			right = self.text[self.index:]
+			bleft = self.bytes[:self.b_f_i(self.index)]
+			bright = self.bytes[self.b_f_i(self.index):]
+		self.text = left + string + right
+		self.index += len (string)
+		self.bytes = bleft + str(len(string)) + bright
+		self.bindex += 1
+		self.end_index = self.index
+
+	def draw (self, context):
+		if not self.layout:
+			self.recalc_edges ()
+		if not self.editing:
+			# We should draw the entire bounding box around ourselves
+			# We should also have our coordinates figured out.	If not, scream!
+			if not self.ul or not self.lr:
+				print "Warning: Trying to draw unfinished box "+str(self.identity)+".  Aborting."
+				return
+
+			utils.draw_thought_outline (context, self.ul, self.lr, self.am_selected, self.am_primary, utils.STYLE_NORMAL)
+
+		else:
+			(strong, weak) = self.layout.get_cursor_pos (self.index)
+			(startx, starty, curx,cury) = strong
+			startx /= pango.SCALE
+			starty /= pango.SCALE
+			curx /= pango.SCALE
+			cury /= pango.SCALE
+
+			context.move_to (self.text_location[0]+startx, self.text_location[1]+starty)
+			context.line_to (self.text_location[0]+startx, self.text_location[1]+starty+cury)
+			context.stroke ()
+			context.move_to (self.ul[0], self.ul[1]+5)
+			context.line_to (self.ul[0], self.ul[1])
+			context.line_to (self.ul[0]+5, self.ul[1])
+			context.stroke ()
+			attrs = pango.AttrList ()
+			if self.index > self.end_index:
+				bgsel = pango.AttrBackground (65535, 0, 0, self.end_index, self.index)
+			else:
+				bgsel = pango.AttrBackground (65535, 0, 0, self.index, self.end_index)
+			attrs.insert (bgsel)
+			self.layout.set_attributes(attrs)
+
+		context.move_to (self.text_location[0], self.text_location[1])
+		context.show_layout (self.layout)
+		context.set_source_rgb (0,0,0)
+		context.stroke ()
+
+	def begin_editing (self):
+		self.editing = True
+
+	def finish_editing (self):
+		if not self.editing:
+			return
+		self.editing = False
+		if len (self.text) == 0:
+			self.emit ("delete_thought")
+
+
 
 class TextThoughtOld (BaseThought.BaseThought):
 
