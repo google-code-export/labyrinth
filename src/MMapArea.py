@@ -148,7 +148,7 @@ class MMapArea (gtk.DrawingArea):
 		if not self.im_context.filter_keypress (event):
 			if len(self.selected) != 1 or not self.selected[0].process_key_press (event, self.mode):
 				return self.global_key_handler (event)
-		return False
+		return True
 
 	def key_release (self, widget, event):
 		self.im_context.filter_keypress (event)
@@ -180,6 +180,7 @@ class MMapArea (gtk.DrawingArea):
 	def set_mode (self, mode):
 		self.old_mode = self.mode
 		self.mode = mode
+		self.finish_editing ()
 
 		if mode == MODE_IMAGE or mode == MODE_DRAW:
 			self.window.set_cursor (gtk.gdk.Cursor (gtk.gdk.CROSSHAIR))
@@ -212,15 +213,14 @@ class MMapArea (gtk.DrawingArea):
 
 		if modifiers and modifiers & gtk.gdk.CONTROL_MASK:
 			self.selected.append (thought)
-			thought.select ()
 		elif modifiers and modifiers & gtk.gdk.SHIFT_MASK:
 			# TODO: This should really be different somehow
 			self.selected.append (thought)
-			thought.select ()
 		else:
 			for x in self.selected:
 				x.unselect ()
 			self.selected = [thought]
+		thought.select ()
 		if len(self.selected) == 1:
 			self.emit ("change_buffer", thought.extended_buffer)
 			self.commit_handler = self.im_context.connect ("commit", thought.commit_text, self.mode)
@@ -279,7 +279,7 @@ class MMapArea (gtk.DrawingArea):
 		return
 
 	def finish_editing (self, thought = None):
-		if thought and thought != self.editing:
+		if not self.editing or (thought and thought != self.editing):
 			return
 		self.editing.finish_editing ()
 		self.editing = None

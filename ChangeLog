@@ -1,13 +1,18 @@
 2006-10-31 Don Scorgie <DonScorgie@Blueyonder.co.uk>
 
+	(Text Thoughts mostly work)
+	* src/BaseThought.py:
+	* src/MMapArea.py:
+	* src/TextThought.py:
+	Make movement with keys work again
+	Make Escape finish editing a thought
+
 	(Still pretty borken)
 	* src/BaseThought.py:
 	* src/MMapArea.py:
 	* src/TextThought.py:
 	Draw text thoughts.  Add text.  No selection / moving / fancy yet.
 	But at least adding text once again works
-
-
 
 2006-10-24 Don Scorgie <DonScorgie@Blueyonder.co.uk>
 

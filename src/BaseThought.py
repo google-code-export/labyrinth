@@ -83,6 +83,7 @@ class BaseThought (gobject.GObject):
 		self.ul = self.lr = None
 		self.am_primary = False
 		self.am_selected = False
+		self.sensitive = 5
 		self.editing = False
 		self.identity = -1
 		self.index = 0
@@ -142,7 +143,7 @@ class BaseThought (gobject.GObject):
 	def process_button_down (self, event, mode):
 		pass
 
-	def process_button_release (self, event, mode):
+	def process_button_release (self, event, unending_link, mode):
 		pass
 
 	def process_key_press (self, event, mode):
@@ -296,7 +297,6 @@ class ResizableThought (gobject.GObject):
 
 	def __init__ (self, save, elem_type):
 		super (ResizableThought, self).__init__(save, elem_type)
-		self.sensitive = 5
 		self.resizing = False
 
 	def includes (self, coords):
