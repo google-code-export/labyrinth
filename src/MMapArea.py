@@ -141,12 +141,13 @@ class MMapArea (gtk.DrawingArea):
 				self.create_link (x, None, thought)
 			self.select_thought (thought, None)
 			self.begin_editing (thought)
+		self.invalidate ()
 		return ret
 
 	def key_press (self, widget, event):
 		if not self.im_context.filter_keypress (event):
 			if len(self.selected) != 1 or not self.selected[0].process_key_press (event, self.mode):
-				return self.global_key_handler ()
+				return self.global_key_handler (event)
 		return False
 
 	def key_release (self, widget, event):
@@ -196,7 +197,7 @@ class MMapArea (gtk.DrawingArea):
 			print "Warning: Already have a primary root"
 			if self.title_change_handler:
 				self.primary.disconnect (self.title_change_handler)
-		thought.connect ("title_changed", self.title_changed_cb)
+		self.title_change_handler = thought.connect ("title_changed", self.title_changed_cb)
 		self.primary = thought
 		thought.make_primary ()
 
@@ -227,7 +228,7 @@ class MMapArea (gtk.DrawingArea):
 			self.emit ("change_buffer", None)
 
 	def begin_editing (self, thought):
-		if self.selected.count (thought) or len (self.selected != 1):
+		if self.selected.count (thought) != 1 or len (self.selected) != 1:
 			return
 		if self.editing:
 			self.finish_editing ()
@@ -284,7 +285,7 @@ class MMapArea (gtk.DrawingArea):
 		self.editing = None
 
 	def update_view (self, thought):
-		self.invalidate (True)
+		self.invalidate ()
 
 	def invalidate (self):
 		'''Helper function to invalidate the entire screen, forcing a redraw'''
@@ -335,8 +336,8 @@ class MMapArea (gtk.DrawingArea):
 			self.emit ("change_mode", self.old_mode)
 
 		self.nthoughts += 1
-		element = thought.get_save_element ()
-		self.element.appendChild (element)
+		element = thought.element
+		self.element.appendChild (thought.element)
 		thought.connect ("select_thought", self.select_thought)
 		thought.connect ("begin_editing", self.begin_editing)
 		thought.connect ("popup_requested", self.create_popup_menu)
@@ -373,6 +374,7 @@ class MMapArea (gtk.DrawingArea):
 		for l in rem_links:
 			self.delete_link (l)
 		del thought
+		return True
 
 	def delete_selected_thoughts (self):
 		for t in self.selected:
@@ -383,13 +385,13 @@ class MMapArea (gtk.DrawingArea):
 		link.element.unlink ()
 		self.links.remove (link)
 
-	def global_key_handler (self, keysym):
+	def global_key_handler (self, event):
 		# Use a throw-away dictionary for keysym lookup.
 		# Idea from: http://simon.incutio.com/archive/2004/05/07/switch
 		# Dunno why.  Just trying things out
 		try:
 			{ gtk.keysyms.Delete: self.delete_selected_thoughts,
-			  gtk.keysyms.BackSpace: self.delete_selected_thoughts}[keysym]()
+			  gtk.keysyms.BackSpace: self.delete_selected_thoughts}[event.keysym]()
 		except:
 			return False
 		self.invalidate ()
@@ -605,9 +607,11 @@ class MMapAreaOld (gtk.DrawingArea):
 		thought = self.find_thought_at (event.get_coords (), event.state)
 
 		if thought:
-			for t in self.selected_thoughts:
-				if t != thought:
-					self.finish_editing (t)
+			if thought != self.editing:
+				self.finish_editing ()
+			#for t in self.selected_thoughts:
+			#	if t != thought:
+			#		self.finish_editing (t)
 			self.make_current_root (thought)
 			self.select_thought (thought)
 			self.watching_movement = True

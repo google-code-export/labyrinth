@@ -100,6 +100,7 @@ class BaseThought (gobject.GObject):
 	# These are self-explanitory.  You probably don't want to
 	# overwrite these methods, unless you have a very good reason
 	def get_save_element (self):
+		print "Passing back element: "+str(self.element)
 		return self.element
 
 	def make_primary (self):
