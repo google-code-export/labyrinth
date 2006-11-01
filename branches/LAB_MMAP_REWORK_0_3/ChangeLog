@@ -1,5 +1,11 @@
 2006-11-01 Don Scorgie <DonScorgie@Blueyonder.co.uk>
 
+	(I was wrong.  Loads old *text only* maps properly now)
+	* src/MMapArea.py:
+	* src/MainWindow.py:
+	Fix a few more minor errors relating to loading in
+	different modes.  Handle the "invisible_buffer" properly when loading
+
 	(*Think* TextThoughts now work properly)
 	* src/MMapArea.py:
 	* src/TextThought.py:
