@@ -145,6 +145,7 @@ class LabyrinthWindow (gtk.Window):
 		self.set_title (self.title_cp)
 		self.act.set_current_value (self.mode)
 		self.ext_act.set_active (self.extended_visible)
+		self.invisible_buffer = gtk.TextBuffer ()
 
 		# Show everything required
 		vbox.show ()
@@ -244,7 +245,7 @@ class LabyrinthWindow (gtk.Window):
 			self.extended.set_editable (True)
 			self.extended.set_buffer (new_buffer)
 		else:
-			self.extended.set_buffer (None)
+			self.extended.set_buffer (self.invisible_buffer)
 			self.extended.set_editable (False)
 
 	def main_area_focus_cb (self, arg, arg2):
@@ -493,8 +494,8 @@ class LabyrinthWindow (gtk.Window):
 			self.paste.set_sensitive (True)
 		else:
 			start, end = self.MainArea.get_selection_bounds ()
-			if self.mode == MMapArea.MODE_EDITING and len(self.MainArea.selected_thoughts) and \
-			   self.MainArea.selected_thoughts[0].editing:
+			if self.mode == MMapArea.MODE_EDITING and len(self.MainArea.selected) and \
+			   self.MainArea.selected[0].editing:
 				self.paste.set_sensitive (True)
 			else:
 				self.paste.set_sensitive (False)

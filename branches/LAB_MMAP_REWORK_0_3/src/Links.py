@@ -57,7 +57,7 @@ class Link (gobject.GObject):
 		self.end = coords
 
 	def change_strength (self, thought, thought2):
-		if not self.connnects (thought, thought2):
+		if not self.connects (thought, thought2):
 			return False
 		if self.parent == thought:
 			self.strength += 1
