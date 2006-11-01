@@ -1,5 +1,13 @@
 2006-11-01 Don Scorgie <DonScorgie@Blueyonder.co.uk>
 
+	(*Think* TextThoughts now work properly)
+	* src/MMapArea.py:
+	* src/TextThought.py:
+	* src/Links.py:
+	* src/MainWindow.py:
+	Make Loading and saving of TextThoughts, Links and maps
+	work properly.  Fix other various minor problems
+
 	(Unbroken most text stuff.  Loading / Saving still doesn't work)
 	* src/MMapArea.py:
 	* src/TextThought.py:
