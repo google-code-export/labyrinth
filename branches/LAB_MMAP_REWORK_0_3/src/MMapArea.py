@@ -86,7 +86,6 @@ class MMapArea (gtk.DrawingArea):
 		self.num_selected = 0
 		self.primary = None
 		self.editing = None
-		self.motion_capture = None
 		self.pango_context = self.create_pango_context()
 
 		self.unending_link = None
@@ -131,8 +130,6 @@ class MMapArea (gtk.DrawingArea):
 				self.move_origin = (event.x,event.y)
 				self.move_origin_new = self.move_origin
 			ret = obj.process_button_down (event, self.mode)
-			if obj.want_motion:
-				self.motion_capture = obj
 		elif event.button == 3:
 			ret = self.create_popup_menu (None, event.get_coords (), MENU_EMPTY_SPACE)
 		return ret
@@ -155,6 +152,8 @@ class MMapArea (gtk.DrawingArea):
 			if self.unending_link:
 				self.unending_link.set_child (thought)
 				self.links.append (self.unending_link)
+				element = self.unending_link.get_save_element ()
+				self.element.appendChild (element)
 				self.unending_link = None
 			else:
 				for x in self.selected:
@@ -175,6 +174,7 @@ class MMapArea (gtk.DrawingArea):
 		return True
 
 	def motion (self, widget, event):
+		obj = self.find_object_at (event.get_coords())
 		if self.unending_link:
 			self.unending_link.set_end (event.get_coords())
 			self.invalidate ()
@@ -185,13 +185,12 @@ class MMapArea (gtk.DrawingArea):
 			self.move_origin_new = (event.x, event.y)
 			self.invalidate ()
 			return True
-		elif self.editing and event.state & gtk.gdk.BUTTON1_MASK:
+		elif self.editing and event.state & gtk.gdk.BUTTON1_MASK and not obj:
 			# We were too quick with the movement.  We really actually want to
 			# create the unending link
 			self.create_link (self.editing)
 			self.finish_editing ()
 
-		obj = self.find_object_at (event.get_coords())
 		if obj:
 			obj.handle_motion (event, self.mode)
 		elif self.mode == MODE_IMAGE or self.mode == MODE_DRAW:
@@ -208,6 +207,15 @@ class MMapArea (gtk.DrawingArea):
 				return x
 		return None
 
+	def realize_cb (self, widget):
+		self.disconnect (self.realize_handle)
+		if self.mode == MODE_IMAGE or self.mode == MODE_DRAW:
+			self.window.set_cursor (gtk.gdk.Cursor (gtk.gdk.CROSSHAIR))
+		else:
+			self.window.set_cursor (gtk.gdk.Cursor (gtk.gdk.LEFT_PTR))
+		return False
+
+
 	def set_mode (self, mode):
 		self.old_mode = self.mode
 		self.mode = mode
@@ -216,13 +224,16 @@ class MMapArea (gtk.DrawingArea):
 			self.im_context.disconnect (self.commit_handler)
 			self.commit_handler = None
 
-		if mode == MODE_IMAGE or mode == MODE_DRAW:
-			self.window.set_cursor (gtk.gdk.Cursor (gtk.gdk.CROSSHAIR))
+		if self.window:
+			if mode == MODE_IMAGE or mode == MODE_DRAW:
+				self.window.set_cursor (gtk.gdk.Cursor (gtk.gdk.CROSSHAIR))
+			else:
+				self.window.set_cursor (gtk.gdk.Cursor (gtk.gdk.LEFT_PTR))
 		else:
-			self.window.set_cursor (gtk.gdk.Cursor (gtk.gdk.LEFT_PTR))
-
+			self.realize_handle = self.connect ("realize", self.realize_cb)
 		self.mode = mode
-		self.invalidate ()
+		if self.window:
+			self.invalidate ()
 
 	def title_changed_cb (self, widget, new_title):
 		self.emit ("title_changed", new_title)
@@ -253,7 +264,7 @@ class MMapArea (gtk.DrawingArea):
 		if modifiers and modifiers & gtk.gdk.CONTROL_MASK:
 			if self.selected.count (thought) == 0:
 				self.selected.append (thought)
-		elif modifiers and modifiers & gtk.gdk.SHIFT_MASK:
+		elif modifiers and (modifiers & gtk.gdk.SHIFT_MASK or modifiers == -1):
 			# TODO: This should really be different somehow
 			if self.selected.count (thought) == 0:
 				self.selected.append (thought)
@@ -439,7 +450,7 @@ class MMapArea (gtk.DrawingArea):
 		return True
 
 	def load_thought (self, node, type):
-		thought = create_new_thought (None, type)
+		thought = self.create_new_thought (None, type, loading = True)
 		thought.load (node)
 
 	def load_link (self, node):
@@ -450,11 +461,11 @@ class MMapArea (gtk.DrawingArea):
 	def load_thyself (self, top_element, doc):
 		for node in top_element.childNodes:
 			if node.nodeName == "thought":
-				self.load_thought (node, TYPE_TEXT, loading = True)
+				self.load_thought (node, TYPE_TEXT)
 			elif node.nodeName == "image_thought":
-				self.load_thought (node, TYPE_IMAGE, loading = True)
+				self.load_thought (node, TYPE_IMAGE)
 			elif node.nodeName == "drawing_thought":
-				self.load_thought (node, TYPE_DRAWING, loading = True)
+				self.load_thought (node, TYPE_DRAWING)
 			elif node.nodeName == "link":
 				self.load_link (node)
 			else:
@@ -470,7 +481,7 @@ class MMapArea (gtk.DrawingArea):
 			if t.am_primary:
 				self.make_primary (t)
 			if t.am_selected:
-				self.select_thought (t)
+				self.select_thought (t, -1)
 			if t.editing:
 				self.begin_editing (t)
 		del_links = []

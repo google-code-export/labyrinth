@@ -382,7 +382,7 @@ class LabyrinthWindow (gtk.Window):
 		self.move (int (x), int (y))
 
 		self.set_title (self.title_cp)
-		self.MainArea.set_mode (self.mode, False)
+		self.MainArea.set_mode (self.mode)
 		self.MainArea.load_thyself (top_element, doc)
 
 	def configure_cb (self, window, event):

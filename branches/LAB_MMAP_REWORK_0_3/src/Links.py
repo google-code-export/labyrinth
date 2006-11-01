@@ -38,7 +38,7 @@ class Link (gobject.GObject):
 		self.strength = 2
 		self.element = save.createElement ("link")
 
-		if not self.start:
+		if not self.start and parent:
 			self.start = (parent.ul[0]-((parent.ul[0]-parent.lr[0]) / 2.), \
 						  parent.ul[1]-((parent.ul[1]-parent.lr[1]) / 2.))
 
@@ -94,7 +94,11 @@ class Link (gobject.GObject):
 	def export (self, context, move_x, move_y):
 		rem = False
 		if not self.start or not self.end:
-			self.find_ends ()
+			# Probably shouldn't do this, but its safe now
+			self.start = (self.parent.ul[0]-((self.parent.ul[0]-self.parent.lr[0]) / 2.), \
+						  self.parent.ul[1]-((self.parent.ul[1]-self.parent.lr[1]) / 2.))
+			self.end = (self.child.ul[0]-((self.child.ul[0]-self.child.lr[0]) / 2.), \
+						self.child.ul[1]-((self.child.ul[1]-self.child.lr[1]) / 2.))
 			rem = True
 		cwidth = context.get_line_width ()
 		context.set_line_width (self.strength)
@@ -123,7 +127,7 @@ class Link (gobject.GObject):
 		else:
 			self.element.setAttribute ("parent", "None")
 
-	def load_data (self, node):
+	def load (self, node):
 		self.parent_number = self.child_number = -1
 		tmp = node.getAttribute ("end")
 		if not tmp:

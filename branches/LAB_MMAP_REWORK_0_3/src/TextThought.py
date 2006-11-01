@@ -40,6 +40,7 @@ class TextThought (BaseThought.BaseThought):
 		self.bindex = 0
 		self.text_location = coords
 		self.text_element = save.createTextNode ("GOOBAH")
+		self.element.appendChild (self.text_element)
 		self.layout = None
 		self.identity = thought_number
 		self.pango_context = pango_context
@@ -107,7 +108,7 @@ class TextThought (BaseThought.BaseThought):
 			left = self.text[:self.index]
 			right = self.text[self.end_index:]
 			bleft = self.bytes[:self.b_f_i (self.index)]
-			bright = self.bytes[self.b_f_i (self.end_indes):]
+			bright = self.bytes[self.b_f_i (self.end_index):]
 		else:
 			left = self.text[:self.index]
 			right = self.text[self.index:]
@@ -116,7 +117,7 @@ class TextThought (BaseThought.BaseThought):
 		self.text = left + string + right
 		self.index += len (string)
 		self.bytes = bleft + str(len(string)) + bright
-		self.bindex += 1
+		self.bindex = self.b_f_i (self.index)
 		self.end_index = self.index
 
 	def draw (self, context):
@@ -145,13 +146,13 @@ class TextThought (BaseThought.BaseThought):
 			context.line_to (self.ul[0], self.ul[1])
 			context.line_to (self.ul[0]+5, self.ul[1])
 			context.stroke ()
-			attrs = pango.AttrList ()
-			if self.index > self.end_index:
-				bgsel = pango.AttrBackground (65535, 0, 0, self.end_index, self.index)
-			else:
-				bgsel = pango.AttrBackground (65535, 0, 0, self.index, self.end_index)
-			attrs.insert (bgsel)
-			self.layout.set_attributes(attrs)
+		attrs = pango.AttrList ()
+		if self.index > self.end_index:
+			bgsel = pango.AttrBackground (65535, 0, 0, self.end_index, self.index)
+		else:
+			bgsel = pango.AttrBackground (65535, 0, 0, self.index, self.end_index)
+		attrs.insert (bgsel)
+		self.layout.set_attributes(attrs)
 
 		context.move_to (self.text_location[0], self.text_location[1])
 		context.show_layout (self.layout)
@@ -166,6 +167,7 @@ class TextThought (BaseThought.BaseThought):
 		if not self.editing:
 			return
 		self.editing = False
+		self.end_index = self.index
 		self.emit ("update_links")
 		if len (self.text) == 0:
 			self.emit ("delete_thought")
@@ -408,9 +410,104 @@ class TextThought (BaseThought.BaseThought):
 			 (self.ul[0]-((self.ul[0]-self.lr[0]) / 2.), self.ul[1]-((self.ul[1]-self.lr[1]) / 2.)))
 		self.emit ("update_view")
 
+	def export (self, context, move_x, move_y):
+		utils.export_thought_outline (context, self.ul, self.lr, self.am_selected, self.am_primary, utils.STYLE_NORMAL,
+									  (move_x, move_y))
 
-	def want_motion (self):
-		return self.moving
+		context.move_to (self.text_location[0]+move_x, self.text_location[1]+move_y)
+		context.show_layout (self.layout)
+		context.set_source_rgb (0,0,0)
+		context.stroke ()
+
+	def update_save (self):
+		self.text_element.replaceWholeText (self.text)
+		text = self.extended_buffer.get_text ()
+		if text:
+			self.extended_element.replaceWholeText (text)
+		else:
+			self.extended_element.replaceWholeText ("LABYRINTH_AUTOGEN_TEXT_REMOVE")
+		self.element.setAttribute ("cursor", str(self.index))
+		self.element.setAttribute ("selection_end", str(self.end_index))
+		self.element.setAttribute ("ul-coords", str(self.ul))
+		self.element.setAttribute ("lr-coords", str(self.lr))
+		self.element.setAttribute ("identity", str(self.identity))
+		if self.editing:
+			self.element.setAttribute ("edit", "true")
+		else:
+			try:
+				self.element.removeAttribute ("edit")
+			except xml.dom.NotFoundErr:
+				pass
+		if self.am_selected:
+				self.element.setAttribute ("current_root", "true")
+		else:
+			try:
+				self.element.removeAttribute ("current_root")
+			except xml.dom.NotFoundErr:
+				pass
+		if self.am_primary:
+			self.element.setAttribute ("primary_root", "true");
+		else:
+			try:
+				self.element.removeAttribute ("primary_root")
+			except xml.dom.NotFoundErr:
+				pass
+
+
+	def load (self, node):
+		self.index = int (node.getAttribute ("cursor"))
+		if node.hasAttribute ("selection_end"):
+			self.end_index = int (node.getAttribute ("selection_end"))
+		else:
+			self.end_index = self.index
+		tmp = node.getAttribute ("ul-coords")
+		self.ul = utils.parse_coords (tmp)
+		tmp = node.getAttribute ("lr-coords")
+		self.lr = utils.parse_coords (tmp)
+		self.identity = int (node.getAttribute ("identity"))
+		if node.hasAttribute ("edit"):
+			self.editing = True
+		else:
+			self.editing = False
+		if node.hasAttribute ("current_root"):
+			self.am_selected = True
+		else:
+			self.am_selected = False
+		if node.hasAttribute ("primary_root"):
+			self.am_primary = True
+		else:
+			self.am_primary = False
+
+		for n in node.childNodes:
+			if n.nodeType == n.TEXT_NODE:
+				self.text = n.data
+			elif n.nodeName == "Extended":
+				for m in n.childNodes:
+					if m.nodeType == m.TEXT_NODE:
+						text = m.data
+						if text != "LABYRINTH_AUTOGEN_TEXT_REMOVE":
+							self.extended_buffer.set_text (text)
+			else:
+				print "Unknown: "+n.nodeName
+		# Build the Byte table
+		tmp = self.text.encode ("utf-8")
+		current = 0
+		for z in range(len(self.text)):
+			if str(self.text[z]) == str(tmp[current]):
+				self.bytes += '1'
+			else:
+				blen = 2
+				while 1:
+					if str(tmp[current:current+blen].encode()) == str(self.text[z]):
+						self.bytes += str(blen)
+						current+=(blen-1)
+						break
+					blen += 1
+			current+=1
+		self.bindex = self.b_f_i (self.index)
+		self.text = tmp
+		self.recalc_edges ()
+
 
 class TextThoughtOld (BaseThought.BaseThought):
 
@@ -651,7 +748,7 @@ class TextThoughtOld (BaseThought.BaseThought):
 			left = self.text[:self.index]
 			right = self.text[self.end_index:]
 			bleft = self.bytes[:self.b_f_i (self.index)]
-			bright = self.bytes[self.b_f_i (self.end_indes):]
+			bright = self.bytes[self.b_f_i (self.end_index):]
 		else:
 			left = self.text[:self.index]
 			right = self.text[self.index:]
