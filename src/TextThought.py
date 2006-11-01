@@ -160,6 +160,7 @@ class TextThought (BaseThought.BaseThought):
 
 	def begin_editing (self):
 		self.editing = True
+		self.emit ("update_links")
 
 	def finish_editing (self):
 		if not self.editing:
@@ -364,8 +365,6 @@ class TextThought (BaseThought.BaseThought):
 		modifiers = gtk.accelerator_get_default_mod_mask ()
 
 		if event.button == 1:
-			self.initial_coords = (event.x, event.y)
-			self.other_initial = self.ul
 			if event.type == gtk.gdk.BUTTON_PRESS and not self.editing:
 				self.emit ("select_thought", event.state & modifiers)
 			elif event.type == gtk.gdk.BUTTON_PRESS and self.editing:
@@ -391,9 +390,22 @@ class TextThought (BaseThought.BaseThought):
 
 	def handle_motion (self, event, mode):
 		if event.state & gtk.gdk.BUTTON1_MASK and self.editing:
-			print "Dragging within.  Maybe"
+			if event.x < self.lr[0] and event.x > self.ul[0] and \
+			   event.y < self.lr[1] and event.y > self.ul[1]:
+				x = int ((event.x - self.ul[0])*pango.SCALE)
+				y = int ((event.y - self.ul[1])*pango.SCALE)
+				loc = self.layout.xy_to_index (x, y)
+				self.index = loc[0]
+				if loc[0] >= len(self.text) -1 or self.text[loc[0]+1] == '\n':
+					self.index += loc[1]
+				self.bindex = self.bindex_from_index (self.index)
+			else:
+				self.emit ("finish_editing")
+				self.emit ("create_link", \
+				 (self.ul[0]-((self.ul[0]-self.lr[0]) / 2.), self.ul[1]-((self.ul[1]-self.lr[1]) / 2.)))
 		elif event.state & gtk.gdk.BUTTON1_MASK and not self.editing:
-			print "Not editing.  Doing the link thing"
+			self.emit ("create_link", \
+			 (self.ul[0]-((self.ul[0]-self.lr[0]) / 2.), self.ul[1]-((self.ul[1]-self.lr[1]) / 2.)))
 		self.emit ("update_view")
 
 

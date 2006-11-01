@@ -125,11 +125,11 @@ class MMapArea (gtk.DrawingArea):
 		ret = False
 		obj = self.find_object_at (event.get_coords())
 
-		self.moving = event.state & gtk.gdk.CONTROL_MASK
-		self.move_origin = (event.x,event.y)
-		self.move_origin_new = self.move_origin
-
 		if obj:
+			if event.button == 1 and not self.editing:
+				self.moving = not (event.state & gtk.gdk.CONTROL_MASK)
+				self.move_origin = (event.x,event.y)
+				self.move_origin_new = self.move_origin
 			ret = obj.process_button_down (event, self.mode)
 			if obj.want_motion:
 				self.motion_capture = obj
@@ -152,8 +152,13 @@ class MMapArea (gtk.DrawingArea):
 			thought = self.create_new_thought (event.get_coords ())
 			if not self.primary:
 				self.make_primary (thought)
-			for x in self.selected:
-				self.create_link (x, None, thought)
+			if self.unending_link:
+				self.unending_link.set_child (thought)
+				self.links.append (self.unending_link)
+				self.unending_link = None
+			else:
+				for x in self.selected:
+					self.create_link (x, None, thought)
 			self.select_thought (thought, None)
 			self.begin_editing (thought)
 		self.invalidate ()
@@ -179,8 +184,12 @@ class MMapArea (gtk.DrawingArea):
 				t.move_by (event.x - self.move_origin_new[0], event.y - self.move_origin_new[1])
 			self.move_origin_new = (event.x, event.y)
 			self.invalidate ()
-			#self.motion_capture.handle_motion (event, self.mode)
 			return True
+		elif self.editing and event.state & gtk.gdk.BUTTON1_MASK:
+			# We were too quick with the movement.  We really actually want to
+			# create the unending link
+			self.create_link (self.editing)
+			self.finish_editing ()
 
 		obj = self.find_object_at (event.get_coords())
 		if obj:
@@ -228,7 +237,7 @@ class MMapArea (gtk.DrawingArea):
 		thought.make_primary ()
 
 	def select_thought (self, thought, modifiers):
-		if self.selected.count (thought) > 0 and modifiers & gtk.gdk.CONTROL_MASK:
+		if len (self.selected) > 1 and self.selected.count (thought) > 0 and modifiers & gtk.gdk.SHIFT_MASK:
 			self.selected.remove (thought)
 			thought.unselect ()
 			return
@@ -242,10 +251,12 @@ class MMapArea (gtk.DrawingArea):
 		self.thoughts.insert(0,thought)
 
 		if modifiers and modifiers & gtk.gdk.CONTROL_MASK:
-			self.selected.append (thought)
+			if self.selected.count (thought) == 0:
+				self.selected.append (thought)
 		elif modifiers and modifiers & gtk.gdk.SHIFT_MASK:
 			# TODO: This should really be different somehow
-			self.selected.append (thought)
+			if self.selected.count (thought) == 0:
+				self.selected.append (thought)
 		else:
 			for x in self.selected:
 				x.unselect ()
