@@ -1,5 +1,16 @@
 2006-11-01 Don Scorgie <DonScorgie@Blueyonder.co.uk>
 
+	(Unbroken most text stuff.  Loading / Saving still doesn't work)
+	* src/MMapArea.py:
+	* src/TextThought.py:
+	Make default be to move a thought
+	ctrl-click-drag creates an unending link
+	Allow text selection with mouse
+	shift and ctrl selection (seem to) work almost as expected
+
+	* src/Links.py:
+	If not coords are given, figure them out to default
+
 	(Broke thought selection quite badly with ctrl)
 	* src/MMapArea.py:
 	* src/BaseThought.py:

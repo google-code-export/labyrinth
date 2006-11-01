@@ -38,6 +38,10 @@ class Link (gobject.GObject):
 		self.strength = 2
 		self.element = save.createElement ("link")
 
+		if not self.start:
+			self.start = (parent.ul[0]-((parent.ul[0]-parent.lr[0]) / 2.), \
+						  parent.ul[1]-((parent.ul[1]-parent.lr[1]) / 2.))
+
 		if parent and child:
 			self.find_ends ()
 
