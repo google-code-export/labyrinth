@@ -86,6 +86,7 @@ class MMapArea (gtk.DrawingArea):
 		self.num_selected = 0
 		self.primary = None
 		self.editing = None
+		self.motion_capture = None
 		self.pango_context = self.create_pango_context()
 
 		self.unending_link = None
@@ -106,6 +107,9 @@ class MMapArea (gtk.DrawingArea):
 		self.connect ("key_release_event", self.key_release)
 		self.commit_handler = None
 		self.title_change_handler = None
+		self.moving = False
+		self.move_origin = None
+		self.move_origin_new = None
 
 		self.set_events (gtk.gdk.KEY_PRESS_MASK |
 						 gtk.gdk.KEY_RELEASE_MASK |
@@ -121,14 +125,25 @@ class MMapArea (gtk.DrawingArea):
 		ret = False
 		obj = self.find_object_at (event.get_coords())
 
+		self.moving = event.state & gtk.gdk.CONTROL_MASK
+		self.move_origin = (event.x,event.y)
+		self.move_origin_new = self.move_origin
+
 		if obj:
 			ret = obj.process_button_down (event, self.mode)
+			if obj.want_motion:
+				self.motion_capture = obj
 		elif event.button == 3:
-			ret = self.create_popup_menu (event.get_coords (), MENU_EMPTY_SPACE)
+			ret = self.create_popup_menu (None, event.get_coords (), MENU_EMPTY_SPACE)
 		return ret
 
 	def button_release (self, widget, event):
 		ret = False
+		if self.moving:
+			self.moving = False
+			self.move_origin = None
+			return True
+
 		obj = self.find_object_at (event.get_coords ())
 
 		if obj:
@@ -159,6 +174,13 @@ class MMapArea (gtk.DrawingArea):
 			self.unending_link.set_end (event.get_coords())
 			self.invalidate ()
 			return True
+		elif self.moving:
+			for t in self.selected:
+				t.move_by (event.x - self.move_origin_new[0], event.y - self.move_origin_new[1])
+			self.move_origin_new = (event.x, event.y)
+			self.invalidate ()
+			#self.motion_capture.handle_motion (event, self.mode)
+			return True
 
 		obj = self.find_object_at (event.get_coords())
 		if obj:
@@ -181,6 +203,9 @@ class MMapArea (gtk.DrawingArea):
 		self.old_mode = self.mode
 		self.mode = mode
 		self.finish_editing ()
+		if self.commit_handler:
+			self.im_context.disconnect (self.commit_handler)
+			self.commit_handler = None
 
 		if mode == MODE_IMAGE or mode == MODE_DRAW:
 			self.window.set_cursor (gtk.gdk.Cursor (gtk.gdk.CROSSHAIR))
@@ -203,6 +228,11 @@ class MMapArea (gtk.DrawingArea):
 		thought.make_primary ()
 
 	def select_thought (self, thought, modifiers):
+		if self.selected.count (thought) > 0 and modifiers & gtk.gdk.CONTROL_MASK:
+			self.selected.remove (thought)
+			thought.unselect ()
+			return
+
 		if self.commit_handler:
 			self.im_context.disconnect (self.commit_handler)
 			self.commit_handler = None

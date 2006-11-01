@@ -43,6 +43,7 @@ class TextThought (BaseThought.BaseThought):
 		self.layout = None
 		self.identity = thought_number
 		self.pango_context = pango_context
+		self.moving = False
 
 		self.b_f_i = self.bindex_from_index
 		margin = utils.margin_required (utils.STYLE_NORMAL)
@@ -88,6 +89,8 @@ class TextThought (BaseThought.BaseThought):
 		self.lr = (x + self.text_location[0]+margin[2], y + self.text_location[1] + margin[3])
 
 	def commit_text (self, context, string, mode):
+		if not self.editing:
+			self.emit ("begin_editing")
 		self.add_text (string)
 		self.recalc_edges ()
 		self.emit ("title_changed", self.text)
@@ -357,6 +360,45 @@ class TextThought (BaseThought.BaseThought):
 				return
 			line += 1
 
+	def process_button_down (self, event, mode):
+		modifiers = gtk.accelerator_get_default_mod_mask ()
+
+		if event.button == 1:
+			self.initial_coords = (event.x, event.y)
+			self.other_initial = self.ul
+			if event.type == gtk.gdk.BUTTON_PRESS and not self.editing:
+				self.emit ("select_thought", event.state & modifiers)
+			elif event.type == gtk.gdk.BUTTON_PRESS and self.editing:
+				x = int ((event.x - self.ul[0])*pango.SCALE)
+				y = int ((event.y - self.ul[1])*pango.SCALE)
+				loc = self.layout.xy_to_index (x, y)
+				self.index = loc[0]
+				if loc[0] >= len(self.text) -1 or self.text[loc[0]+1] == '\n':
+					self.index += loc[1]
+				self.bindex = self.bindex_from_index (self.index)
+				if not (event.state & modifiers) & gtk.gdk.SHIFT_MASK:
+					self.end_index = self.index
+			elif event.type == gtk.gdk._2BUTTON_PRESS:
+				self.emit ("begin_editing")
+		elif event.button == 3:
+			self.emit ("popup_requested", (event.x, event.y), 1)
+		self.emit ("update_view")
+
+	def process_button_release (self, event, unending_link, mode):
+		if unending_link:
+			unending_link.set_child (self)
+			self.emit ("claim_unending_link")
+
+	def handle_motion (self, event, mode):
+		if event.state & gtk.gdk.BUTTON1_MASK and self.editing:
+			print "Dragging within.  Maybe"
+		elif event.state & gtk.gdk.BUTTON1_MASK and not self.editing:
+			print "Not editing.  Doing the link thing"
+		self.emit ("update_view")
+
+
+	def want_motion (self):
+		return self.moving
 
 class TextThoughtOld (BaseThought.BaseThought):
 

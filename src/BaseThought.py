@@ -24,6 +24,10 @@ import gtk
 import utils
 import TextBufferMarkup
 
+MODE_EDITING = 0
+MODE_IMAGE = 1
+MODE_DRAW = 2
+
 class BaseThought (gobject.GObject):
 	''' The basic class to derive other thoughts from. \
 		Instructions for creating derivative thought types are  \
@@ -121,6 +125,11 @@ class BaseThought (gobject.GObject):
 	def okay (self):
 		return self.all_okay
 
+	def move_by (self, x, y):
+		self.ul = (self.ul[0]+x, self.ul[1]+y)
+		self.recalc_edges ()
+		self.emit ("update_links")
+
 	# This, you may want to change.  Though, doing so will only affect
 	# thoughts that are "parents"
 	def find_connection (self, other):
@@ -183,6 +192,12 @@ class BaseThought (gobject.GObject):
 		pass
 
 	def commit_text (self, im_context, string, mode):
+		pass
+
+	def want_motion (self):
+		return False
+
+	def recalc_edges (self):
 		pass
 
 class BaseThoughtOld (gobject.GObject):
