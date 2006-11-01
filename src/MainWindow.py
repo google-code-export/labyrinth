@@ -93,6 +93,7 @@ class LabyrinthWindow (gtk.Window):
 		# Add in the extended info view
 		self.extended = gtk.TextView ()
 		self.extended.set_wrap_mode (gtk.WRAP_WORD_CHAR)
+		self.invisible_buffer = gtk.TextBuffer ()
 
 		# Connect all our signals
 		self.connect ("configure_event", self.configure_cb)
@@ -145,7 +146,6 @@ class LabyrinthWindow (gtk.Window):
 		self.set_title (self.title_cp)
 		self.act.set_current_value (self.mode)
 		self.ext_act.set_active (self.extended_visible)
-		self.invisible_buffer = gtk.TextBuffer ()
 
 		# Show everything required
 		vbox.show ()

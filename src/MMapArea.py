@@ -323,6 +323,8 @@ class MMapArea (gtk.DrawingArea):
 				return
 		self.unending_link.set_child (thought)
 		self.links.append (self.unending_link)
+		element = self.unending_link.get_save_element ()
+		self.element.appendChild (element)
 		self.unending_link = None
 
 	def create_popup_menu (self, thought, coords, menu_type):
@@ -371,7 +373,7 @@ class MMapArea (gtk.DrawingArea):
 		if self.editing:
 			self.editing.finish_editing ()
 
-		if thought_type:
+		if thought_type!= None:
 			type = thought_type
 		else:
 			type = self.mode
@@ -457,6 +459,8 @@ class MMapArea (gtk.DrawingArea):
 		link = Links.Link (self.save)
 		link.load (node)
 		self.links.append (link)
+		element = link.get_save_element ()
+		self.element.appendChild (element)
 
 	def load_thyself (self, top_element, doc):
 		for node in top_element.childNodes:
