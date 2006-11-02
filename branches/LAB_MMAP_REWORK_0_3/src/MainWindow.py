@@ -308,7 +308,7 @@ class LabyrinthWindow (gtk.Window):
 		self.emit ("title-changed", self.title_cp, self)
 
 	def delete_cb (self, event):
-		self.MainArea.delete_selected_nodes ()
+		self.MainArea.delete_selected_thoughts ()
 
 	def close_window_cb (self, event):
 		self.hide ()

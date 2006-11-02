@@ -109,6 +109,7 @@ class MMapArea (gtk.DrawingArea):
 		self.moving = False
 		self.move_origin = None
 		self.move_origin_new = None
+		self.motion = None
 
 		self.set_events (gtk.gdk.KEY_PRESS_MASK |
 						 gtk.gdk.KEY_RELEASE_MASK |
@@ -124,8 +125,11 @@ class MMapArea (gtk.DrawingArea):
 		ret = False
 		obj = self.find_object_at (event.get_coords())
 
+		if obj and obj.want_motion ():
+			self.motion = obj
+			ret = obj.process_button_down (event, self.mode)
 		if obj:
-			if event.button == 1 and not self.editing:
+			if event.button == 1:
 				self.moving = not (event.state & gtk.gdk.CONTROL_MASK)
 				self.move_origin = (event.x,event.y)
 				self.move_origin_new = self.move_origin
@@ -136,9 +140,10 @@ class MMapArea (gtk.DrawingArea):
 
 	def button_release (self, widget, event):
 		ret = False
-		if self.moving:
-			self.moving = False
-			self.move_origin = None
+		self.motion = None
+		self.moving = False
+		self.move_origin = None
+		if self.moving and not self.editing and not self.unending_link:
 			return True
 
 		obj = self.find_object_at (event.get_coords ())
@@ -147,6 +152,8 @@ class MMapArea (gtk.DrawingArea):
 			ret = obj.process_button_release (event, self.unending_link, self.mode)
 		elif self.unending_link or event.button == 1:
 			thought = self.create_new_thought (event.get_coords ())
+			if not thought:
+				return True
 			if not self.primary:
 				self.make_primary (thought)
 			if self.unending_link:
@@ -174,12 +181,15 @@ class MMapArea (gtk.DrawingArea):
 		return True
 
 	def motion (self, widget, event):
+		if self.motion:
+			self.motion.handle_motion (event, self.mode)
+			return True
 		obj = self.find_object_at (event.get_coords())
 		if self.unending_link:
 			self.unending_link.set_end (event.get_coords())
 			self.invalidate ()
 			return True
-		elif self.moving:
+		elif self.moving and not self.editing and not self.unending_link:
 			for t in self.selected:
 				t.move_by (event.x - self.move_origin_new[0], event.y - self.move_origin_new[1])
 			self.move_origin_new = (event.x, event.y)
@@ -199,7 +209,7 @@ class MMapArea (gtk.DrawingArea):
 			self.window.set_cursor (gtk.gdk.Cursor (gtk.gdk.LEFT_PTR))
 
 	def find_object_at (self, coords):
-		for x in self.thoughts:
+		for x in reversed(self.thoughts):
 			if x.includes (coords, self.mode):
 				return x
 		for x in self.links:
@@ -244,6 +254,7 @@ class MMapArea (gtk.DrawingArea):
 			if self.title_change_handler:
 				self.primary.disconnect (self.title_change_handler)
 		self.title_change_handler = thought.connect ("title_changed", self.title_changed_cb)
+		self.emit ("title_changed", thought.text)
 		self.primary = thought
 		thought.make_primary ()
 
@@ -259,7 +270,7 @@ class MMapArea (gtk.DrawingArea):
 		if self.editing:
 			self.finish_editing ()
 		self.thoughts.remove (thought)
-		self.thoughts.insert(0,thought)
+		self.thoughts.append(thought)
 
 		if modifiers and modifiers & gtk.gdk.CONTROL_MASK:
 			if self.selected.count (thought) == 0:
@@ -284,8 +295,9 @@ class MMapArea (gtk.DrawingArea):
 			return
 		if self.editing:
 			self.finish_editing ()
-		self.editing = thought
-		thought.begin_editing ()
+		do_edit = thought.begin_editing ()
+		if do_edit:
+			self.editing = thought
 
 	def create_link (self, thought, thought_coords = None, child = None, child_coords = None):
 		if child:
@@ -385,7 +397,8 @@ class MMapArea (gtk.DrawingArea):
 		elif type == TYPE_DRAWING:
 			thought = DrawingThought.DrawingThought (coords, self.pango_context, self.nthoughts, self.save, loading)
 		if not thought.okay ():
-			print "Something very, very bad happened"
+			print "Not okay"
+			return None
 		elif type == TYPE_IMAGE:
 			self.emit ("change_mode", self.old_mode)
 
@@ -433,6 +446,7 @@ class MMapArea (gtk.DrawingArea):
 	def delete_selected_thoughts (self):
 		for t in self.selected:
 			self.delete_thought (t)
+		self.invlaidate ()
 
 	def delete_link (self, link):
 		self.element.removeChild (link.element)
@@ -445,7 +459,7 @@ class MMapArea (gtk.DrawingArea):
 		# Dunno why.  Just trying things out
 		try:
 			{ gtk.keysyms.Delete: self.delete_selected_thoughts,
-			  gtk.keysyms.BackSpace: self.delete_selected_thoughts}[event.keysym]()
+			  gtk.keysyms.BackSpace: self.delete_selected_thoughts}[event.keyval]()
 		except:
 			return False
 		self.invalidate ()

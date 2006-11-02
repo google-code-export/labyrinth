@@ -55,7 +55,7 @@ class Link (gobject.GObject):
 
 	def connects (self, thought, thought2):
 		return (self.parent == thought and self.child == thought2) or \
-				(self.child == thought2 and self.parent == thought)
+				(self.child == thought and self.parent == thought2)
 
 	def set_end (self, coords):
 		self.end = coords
