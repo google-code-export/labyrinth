@@ -380,7 +380,7 @@ class TextThought (BaseThought.BaseThought):
 				self.bindex = self.bindex_from_index (self.index)
 				if not (event.state & modifiers) & gtk.gdk.SHIFT_MASK:
 					self.end_index = self.index
-			elif event.type == gtk.gdk._2BUTTON_PRESS:
+			elif mode == BaseThought.MODE_EDITING and event.type == gtk.gdk._2BUTTON_PRESS:
 				self.emit ("begin_editing")
 		elif event.button == 3:
 			self.emit ("popup_requested", (event.x, event.y), 1)
@@ -402,11 +402,12 @@ class TextThought (BaseThought.BaseThought):
 				if loc[0] >= len(self.text) -1 or self.text[loc[0]+1] == '\n':
 					self.index += loc[1]
 				self.bindex = self.bindex_from_index (self.index)
-			else:
+			elif mode == BaseThought.MODE_EDITING:
 				self.emit ("finish_editing")
 				self.emit ("create_link", \
 				 (self.ul[0]-((self.ul[0]-self.lr[0]) / 2.), self.ul[1]-((self.ul[1]-self.lr[1]) / 2.)))
-		elif event.state & gtk.gdk.BUTTON1_MASK and not self.editing:
+				return True
+		elif event.state & gtk.gdk.BUTTON1_MASK and not self.editing and mode == BaseThought.MODE_EDITING:
 			self.emit ("create_link", \
 			 (self.ul[0]-((self.ul[0]-self.lr[0]) / 2.), self.ul[1]-((self.ul[1]-self.lr[1]) / 2.)))
 		self.emit ("update_view")
@@ -470,6 +471,7 @@ class TextThought (BaseThought.BaseThought):
 			self.editing = True
 		else:
 			self.editing = False
+			self.end_index = index
 		if node.hasAttribute ("current_root"):
 			self.am_selected = True
 		else:
