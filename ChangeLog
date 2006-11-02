@@ -1,3 +1,27 @@
+2006-11-02 Don Scorgie <DonScorgie@Blueyonder.co.uk>
+
+	(Lots of updates.  Looks like Images work now as well)
+	* src/ImageThought.py:
+	Convert fully over to new framework
+	Images may occasionally jump around, for an unknown
+	reason at the moment.
+	
+	* src/MMapArea.py:
+	* src/MainWindow.py:
+	* src/BaseThought.py:
+	* src/Links.py:
+	* src/MMapArea.py:
+	* src/ImageThought.py:
+	* src/TextThought.py:
+	Lots of misc. changes.  Made MMapArea logic almost
+	as convolved as before.  But it should really be easier
+	now.
+	Draw selected thoughts on top of everything
+	Make links reduce and strengthen properly
+	When selecting thoughts, select the topmost one in preference
+	to any below it
+
+
 2006-11-01 Don Scorgie <DonScorgie@Blueyonder.co.uk>
 
 	(I was wrong.  Loads old *text only* maps properly now)

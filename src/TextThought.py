@@ -162,6 +162,7 @@ class TextThought (BaseThought.BaseThought):
 	def begin_editing (self):
 		self.editing = True
 		self.emit ("update_links")
+		return True
 
 	def finish_editing (self):
 		if not self.editing:
@@ -552,7 +553,7 @@ class TextThoughtOld (BaseThought.BaseThought):
 			self.commit_handle = im_context.connect ("commit", self.commit_text_cb)
 			self.delete_handle = im_context.connect ("delete-surrounding", self.delete_surround_cb)
 			self.surrounding_handle = im_context.connect ("retrieve-surrounding", self.get_surrounding_cb)
-
+		return True
 
 	def finish_editing (self):
 		if self.editing:
