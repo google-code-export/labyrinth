@@ -42,7 +42,7 @@ MODE_MOVING = 999
 
 TYPE_TEXT = 0
 TYPE_IMAGE = 1
-TYPE_DRAW = 2
+TYPE_DRAWING = 2
 
 # TODO: Need to expand to support popup menus
 MENU_EMPTY_SPACE = 0
@@ -128,8 +128,13 @@ class MMapArea (gtk.DrawingArea):
 		if obj and obj.want_motion ():
 			self.motion = obj
 			ret = obj.process_button_down (event, self.mode)
+			if event.button == 1 and self.mode == MODE_EDITING:
+				self.moving = not (event.state & gtk.gdk.CONTROL_MASK)
+				self.move_origin = (event.x,event.y)
+				self.move_origin_new = self.move_origin
+			return ret
 		if obj:
-			if event.button == 1:
+			if event.button == 1 and self.mode == MODE_EDITING:
 				self.moving = not (event.state & gtk.gdk.CONTROL_MASK)
 				self.move_origin = (event.x,event.y)
 				self.move_origin_new = self.move_origin
@@ -182,8 +187,8 @@ class MMapArea (gtk.DrawingArea):
 
 	def motion (self, widget, event):
 		if self.motion:
-			self.motion.handle_motion (event, self.mode)
-			return True
+			if self.motion.handle_motion (event, self.mode):
+				return True
 		obj = self.find_object_at (event.get_coords())
 		if self.unending_link:
 			self.unending_link.set_end (event.get_coords())
@@ -259,11 +264,10 @@ class MMapArea (gtk.DrawingArea):
 		thought.make_primary ()
 
 	def select_thought (self, thought, modifiers):
-		if len (self.selected) > 1 and self.selected.count (thought) > 0 and modifiers & gtk.gdk.SHIFT_MASK:
+		if modifiers & gtk.gdk.SHIFT_MASK and len (self.selected) > 1 and self.selected.count (thought) > 0:
 			self.selected.remove (thought)
 			thought.unselect ()
 			return
-
 		if self.commit_handler:
 			self.im_context.disconnect (self.commit_handler)
 			self.commit_handler = None
@@ -416,7 +420,7 @@ class MMapArea (gtk.DrawingArea):
 		thought.connect ("text_selection_changed", self.text_selection_cb)
 		thought.connect ("change_mouse_cursor", self.set_mouse_cursor_cb)
 		thought.connect ("update_links", self.update_links_cb)
-		self.thoughts.insert (0, thought)
+		self.thoughts.append (thought)
 
 		return thought
 
@@ -499,7 +503,8 @@ class MMapArea (gtk.DrawingArea):
 			if t.am_primary:
 				self.make_primary (t)
 			if t.am_selected:
-				self.select_thought (t, -1)
+				self.selected.append (t)
+				t.select ()
 			if t.editing:
 				self.begin_editing (t)
 		del_links = []
@@ -882,7 +887,7 @@ class MMapAreaOld (gtk.DrawingArea):
 		if thought.editing:
 			thought.editing = False
 			self.edit_thought (thought)
-		self.thoughts.append (thought)
+		#self.thoughts.append (thought)
 		if thought.identity >= self.nthoughts:
 			self.nthoughts = thought.identity+1
 		thought.connect ("update_view", self.invalidate)

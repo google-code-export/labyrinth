@@ -143,9 +143,10 @@ class ImageThought (BaseThought.ResizableThought):
 		if self.resizing == self.RESIZE_NONE or not self.want_move or not event.state & gtk.gdk.BUTTON1_MASK:
 			if not event.state & gtk.gdk.BUTTON1_MASK:
 				return False
-			else:
+			elif mode == MODE_EDITING:
 				self.emit ("create_link", \
 				 (self.ul[0]-((self.ul[0]-self.lr[0]) / 2.), self.ul[1]-((self.ul[1]-self.lr[1]) / 2.)))
+			return True
 		diffx = event.x - self.motion_coords[0]
 		diffy = event.y - self.motion_coords[1]
 		tmp = self.motion_coords
@@ -190,7 +191,7 @@ class ImageThought (BaseThought.ResizableThought):
 				return True
 			self.ul = (self.ul[0], self.ul[1]+diffy)
 			self.lr = (self.lr[0]+diffx, self.lr[1])
-			self.pic_location = (self.pic_location[1], self.pic_location[1]+diffy)
+			self.pic_location = (self.pic_location[0], self.pic_location[1]+diffy)
 			self.width += diffx
 			self.height -= diffy
 		elif self.resizing == self.RESIZE_LL:

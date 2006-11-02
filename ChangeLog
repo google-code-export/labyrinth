@@ -1,5 +1,20 @@
 2006-11-02 Don Scorgie <DonScorgie@Blueyonder.co.uk>
 
+	(Everything thing seems to be working okay now
+	 *fingers crossed* - Loads all my test maps at least)
+	 
+	* src/DrawingThought.py:
+	Convert Drawing to new framework
+	
+	* src/MMapArea.py:
+	* src/ImageThought.py:
+	* src/TextThought.py:
+	Fix various problems that have appeared:
+	Loading maps with > 1 thought selected sucks (fixed)
+	When loading textthoughts, only show the selection text if
+	we're currently editing
+	Convolve the lovely nice logic we had some more in MMapArea :(
+
 	(Lots of updates.  Looks like Images work now as well)
 	* src/ImageThought.py:
 	Convert fully over to new framework
