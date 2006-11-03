@@ -1,6 +1,17 @@
 2006-11-03 Don Scorgie <DonScorgie@Blueyonder.co.uk>
 
 	* src/MMapArea.py:
+	Only "own" unending links when it's different thoughts
+	Change cursor to "grabbing hand" when moving throughts around
+
+	Plus:
+	* src/ImageThought.py:
+	* src/DrawingThought.py:
+	* src/BaseThought.py:
+	* src/TextThought.py:
+	Remove *Old classes.  Strip whitespace from line ends
+
+	* src/MMapArea.py:
 	Don't delete from a live list (Bad!)
 	Makes deletion of > 1 thought work properly
 
@@ -9,7 +20,7 @@
 	set the cursor to be a pencil
 	Fix to allow unending links to eminate in
 	Edit mode.
-	
+
 	* src/MMapArea.py:
 	When loading in non-edit mode, set the old_mode
 	to be editing mode
@@ -24,10 +35,10 @@
 2006-11-02 Don Scorgie <DonScorgie@Blueyonder.co.uk>
 
 	(Everything thing seems to be working okay now
-	 *fingers crossed* - Loads all my test maps at least)	 
+	 *fingers crossed* - Loads all my test maps at least)
 	* src/DrawingThought.py:
 	Convert Drawing to new framework
-	
+
 	* src/MMapArea.py:
 	* src/ImageThought.py:
 	* src/TextThought.py:
@@ -42,7 +53,7 @@
 	Convert fully over to new framework
 	Images may occasionally jump around, for an unknown
 	reason at the moment.
-	
+
 	* src/MMapArea.py:
 	* src/MainWindow.py:
 	* src/BaseThought.py:

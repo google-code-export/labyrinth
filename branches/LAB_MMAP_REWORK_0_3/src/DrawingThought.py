@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Labyrinth; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, 
+# Foundation, Inc., 51 Franklin St, Fifth Floor,
 # Boston, MA  02110-1301  USA
 #
 
@@ -46,7 +46,7 @@ class DrawingThought (BaseThought.ResizableThought):
 		def move_by (self, x, y):
 			self.x += x
 			self.y += y
-			
+
 	def __init__ (self, coords, pango_context, thought_number, save, loading):
 		global ndraw
 		super (DrawingThought, self).__init__(save, "drawing_thought")
@@ -67,7 +67,7 @@ class DrawingThought (BaseThought.ResizableThought):
 			self.height = 100
 
 		self.all_okay = True
-		
+
 	def draw (self, context):
 		utils.draw_thought_outline (context, self.ul, self.lr, self.am_selected, self.am_primary, utils.STYLE_NORMAL)
 		cwidth = context.get_line_width ()
@@ -77,11 +77,11 @@ class DrawingThought (BaseThought.ResizableThought):
 				if p.style == STYLE_BEGIN:
 					context.move_to (p.x, p.y)
 				else:
-					context.line_to (p.x,p.y)		
-		
+					context.line_to (p.x,p.y)
+
 		context.set_line_width (cwidth)
 		context.stroke ()
-		return		
+		return
 
 	def want_motion (self):
 		return self.want_move
@@ -102,7 +102,7 @@ class DrawingThought (BaseThought.ResizableThought):
 		elif event.button == 3:
 			self.emit ("popup_requested", (event.x, event.y), 1)
 		self.emit ("update_view")
-		
+
 
 	def process_button_release (self, event, unending_link, mode):
 		self.button_down = False
@@ -113,7 +113,7 @@ class DrawingThought (BaseThought.ResizableThought):
 			self.points[-1].style=STYLE_END
 		self.emit ("update_view")
 		self.want_move = False
-	
+
 	def handle_motion (self, event, mode):
 		if (self.resizing == self.RESIZE_NONE or not self.want_move or not event.state & gtk.gdk.BUTTON1_MASK) \
 		   and mode != MODE_DRAW:
@@ -198,7 +198,7 @@ class DrawingThought (BaseThought.ResizableThought):
 			self.emit ("update_links")
 			self.emit ("update_view")
 			return True
-			
+
 		elif mode == MODE_DRAW and (event.state & gtk.gdk.BUTTON1_MASK):
 			if event.x < self.ul[0]:
 				self.ul = (event.x-5, self.ul[1])
@@ -225,7 +225,7 @@ class DrawingThought (BaseThought.ResizableThought):
 				self.points.append (self.DrawingPoint (event.get_coords(), STYLE_CONTINUE))
 		self.emit ("update_view")
 		return True
-	
+
 	def move_by (self, x, y):
 		self.ul = (self.ul[0]+x, self.ul[1]+y)
 		self.min_x += x
@@ -257,7 +257,7 @@ class DrawingThought (BaseThought.ResizableThought):
 		self.element.setAttribute ("min_y", str(self.min_y))
 		self.element.setAttribute ("max_x", str(self.max_x))
 		self.element.setAttribute ("max_y", str(self.max_y))
-		
+
 		if self.am_selected:
 				self.element.setAttribute ("current_root", "true")
 		else:
@@ -271,7 +271,7 @@ class DrawingThought (BaseThought.ResizableThought):
 			try:
 				self.element.removeAttribute ("primary_root")
 			except xml.dom.NotFoundErr:
-				pass				
+				pass
 		doc = self.element.ownerDocument
 		for p in self.points:
 			elem = doc.createElement ("point")
@@ -279,7 +279,7 @@ class DrawingThought (BaseThought.ResizableThought):
 			elem.setAttribute ("coords", str((p.x,p.y)))
 			elem.setAttribute ("type", str(p.style))
 		return
-		
+
 	def load (self, node):
 		tmp = node.getAttribute ("ul-coords")
 		self.ul = utils.parse_coords (tmp)
@@ -302,7 +302,7 @@ class DrawingThought (BaseThought.ResizableThought):
 			self.am_primary = True
 		else:
 			self.am_primary = False
-			
+
 		for n in node.childNodes:
 			if n.nodeName == "Extended":
 				for m in n.childNodes:
@@ -316,7 +316,7 @@ class DrawingThought (BaseThought.ResizableThought):
 				c = utils.parse_coords (tmp)
 				self.points.append (self.DrawingPoint (c, style))
 			else:
-				print "Unknown node type: "+str(n.nodeName)			
+				print "Unknown node type: "+str(n.nodeName)
 
 	def export (self, context, move_x, move_y):
 		utils.export_thought_outline (context, self.ul, self.lr, self.am_selected, self.am_primary, utils.STYLE_NORMAL,
@@ -328,8 +328,8 @@ class DrawingThought (BaseThought.ResizableThought):
 				if p.style == STYLE_BEGIN:
 					context.move_to (p.x+move_x, p.y+move_y)
 				else:
-					context.line_to (p.x+move_x,p.y+move_y)		
-		
+					context.line_to (p.x+move_x,p.y+move_y)
+
 		context.set_line_width (cwidth)
 		context.stroke ()
 		return
@@ -400,308 +400,3 @@ class DrawingThought (BaseThought.ResizableThought):
 				self.emit ("change_mouse_cursor", gtk.gdk.LEFT_PTR)
 		self.want_move = (self.resizing != self.RESIZE_NONE)
 		return inside
-
-
-class DrawingPointOld (object):
-	def __init__ (self, coords, style=STYLE_CONTINUE):
-		# As this is only really used for drawing and
-		# cairo wants indiviual points, we split coords here
-		self.x = coords[0]
-		self.y = coords[1]
-		self.style=style
-	def move_by (self, x, y):
-		self.x += x
-		self.y += y
-
-class DrawingThoughtOld (BaseThought.ResizableThought):
-	def __init__ (self, coords=None, ident=None, element=None, load=None, extended=None):
-		global ndraw
-		super (DrawingThought, self).__init__()
-		ndraw+=1
-		self.element = element
-		self.extended_element = extended
-		self.points = []
-		self.text = _("Drawing #%d" %ndraw)
-		if not load:
-			margin = utils.margin_required (utils.STYLE_NORMAL)
-			self.ul = (coords[0]-margin[0], coords[1]-margin[1])
-			self.identity = ident
-			self.lr = (coords[0]+100+margin[2], coords[1]+100+margin[3])
-			self.min_x = coords[0]+90
-			self.max_x = coords[0]+15
-			self.min_y = coords[1]+90
-			self.max_y = coords[1]+15
-			self.emit ("title_changed", self.text, 65)
-		else:
-			self.load_data (load)
-
-	def begin_editing (self, im_context = None):
-		return
-	
-	def finish_editing (self):
-		return
-	
-	def become_active_root (self):
-		self.am_root = True
-		return
-		
-	def finish_active_root (self):
-		self.am_root = False
-		return
-		
-	def become_primary_thought (self):
-		self.am_primary = True
-		return
-	
-	def handle_movement (self, coords, move=True, edit_mode=False):
-
-		diffx = coords[0] - self.motion_coords[0]
-		diffy = coords[1] - self.motion_coords[1]
-		change = (len(self.points) == 0)
-		tmp = self.motion_coords
-		self.motion_coords = coords
-		
-		if self.resizing != self.MOTION_NONE:
-			if self.resizing == self.MOTION_LEFT:
-				if self.ul[0] + diffx > self.min_x:
-					self.motion_coords = tmp
-					return True
-				self.ul = (self.ul[0]+diffx, self.ul[1])
-				if change:
-					self.max_x += diffx
-			elif self.resizing == self.MOTION_RIGHT:
-				if self.lr[0] + diffx < self.max_x:
-					self.motion_coords = tmp
-					return True
-				self.lr = (self.lr[0]+diffx, self.lr[1])
-				if change:
-					self.min_x += diffx
-			elif self.resizing == self.MOTION_TOP:
-				if self.ul[1] + diffy > self.min_y:
-					self.motion_coords = tmp
-					return True
-				self.ul = (self.ul[0], self.ul[1]+diffy)
-				if change:
-					self.max_y += diffy
-			elif self.resizing == self.MOTION_BOTTOM:
-				if self.lr[1] + diffy < self.max_y:
-					self.motion_coords = tmp
-					return True
-				self.lr = (self.lr[0], self.lr[1]+diffy)
-				if change:
-					self.min_y += diffy
-			elif self.resizing == self.MOTION_UL:
-				if self.ul[1] + diffy > self.min_y or self.ul[0] + diffx > self.min_x:
-					self.motion_coords = tmp
-					return True
-				self.ul = (self.ul[0]+diffx, self.ul[1]+diffy)
-				if change:
-					self.max_x += diffx
-					self.max_y += diffy
-			elif self.resizing == self.MOTION_UR:
-				if self.ul[1] + diffy > self.min_y or self.lr[0] + diffx < self.max_x:
-					self.motion_coords = tmp
-					return True
-				self.ul = (self.ul[0], self.ul[1]+diffy)
-				self.lr = (self.lr[0]+diffx, self.lr[1])
-				if change:
-					self.min_x += diffx
-					self.max_y += diffy
-			elif self.resizing == self.MOTION_LL:
-				if self.lr[1] + diffy < self.max_y or self.ul[0] + diffx > self.min_x:
-					self.motion_coords = tmp
-					return True
-				self.ul = (self.ul[0]+diffx, self.ul[1])
-				self.lr = (self.lr[0], self.lr[1]+diffy)
-				if change:
-					self.max_x += diffx
-					self.min_y += diffy
-			elif self.resizing == self.MOTION_LR:
-				if self.lr[1] + diffy < self.max_y:
-					self.motion_coords = tmp
-					return True
-				if self.lr[0] + diffx < self.max_x:
-					self.motion_coords = tmp
-					return True
-				self.lr = (self.lr[0]+diffx, self.lr[1]+diffy)
-				if change:
-					self.min_x += diffx
-					self.min_y += diffy
-			return True
-		if move:
-			tmp = self.motion_coords
-			self.motion_coords = coords
-			# Actually, we have to move the entire thing
-			self.ul = (self.ul[0]+diffx, self.ul[1]+diffy)
-			self.lr = (self.lr[0]+diffx, self.lr[1]+diffy)
-			self.min_x += diffx
-			self.min_y += diffy
-			self.max_x += diffx
-			self.max_y += diffy
-			for p in self.points:
-				p.move_by (diffx, diffy)
-			return True
-			
-		if not edit_mode:
-			if coords[0] < self.ul[0]:
-				self.ul = (coords[0]-5, self.ul[1])
-			elif coords[0] > self.lr[0]:
-				self.lr = (coords[0]+5, self.lr[1])
-			if coords[1] < self.ul[1]:
-				self.ul = (self.ul[0], coords[1]-5)
-			elif coords[1] > self.lr[1]:
-				self.lr = (self.lr[0], coords[1]+5)
-
-			if coords[0] < self.min_x:
-				self.min_x = coords[0]-10
-			elif coords[0] > self.max_x:
-				self.max_x = coords[0]+5
-			if coords[1] < self.min_y:
-				self.min_y = coords[1]-10
-			elif coords[1] > self.max_y:
-				self.max_y = coords[1]+5
-	
-			if len(self.points) == 0 or self.points[-1].style == STYLE_END:
-				self.points.append (DrawingPoint (coords, STYLE_BEGIN))
-			else:
-				self.points.append (DrawingPoint (coords, STYLE_CONTINUE))
-		return True
-		
-	def handle_key (self, string, keysym, modifiers):
-		# Since we can't handle text in an drawing node, we ignore it.
-		return False	
-	
-	def finish_motion (self):
-		if len(self.points) > 0:
-			self.points[-1].style=STYLE_END
-		self.motion = self.MOTION_NONE
-		self.emit ("change_cursor", gtk.gdk.LEFT_PTR, None)
-		return
-	
-	def want_movement (self):
-		return True
-		
-	def draw (self, context):
-		utils.draw_thought_outline (context, self.ul, self.lr, self.am_root, self.am_primary, utils.STYLE_NORMAL)
-		cwidth = context.get_line_width ()
-		context.set_line_width (1)
-		if len (self.points) > 0:
-			for p in self.points:
-				if p.style == STYLE_BEGIN:
-					context.move_to (p.x, p.y)
-				else:
-					context.line_to (p.x,p.y)		
-		
-		context.set_line_width (cwidth)
-		context.stroke ()
-		return
-	
-	def export (self, context, move_x, move_y):
-		utils.export_thought_outline (context, self.ul, self.lr, self.am_root, self.am_primary, utils.STYLE_NORMAL,
-									  (move_x, move_y))
-		cwidth = context.get_line_width ()
-		context.set_line_width (1)
-		if len (self.points) > 0:
-			for p in self.points:
-				if p.style == STYLE_BEGIN:
-					context.move_to (p.x+move_x, p.y+move_y)
-				else:
-					context.line_to (p.x+move_x,p.y+move_y)		
-		
-		context.set_line_width (cwidth)
-		context.stroke ()
-		return
-	
-	def find_connection (self, other, export=False):
-		if not export and self.editing or other.editing:
-			return (None, None)
-		elif export:
-			self.update_bbox ()
-			other.update_bbox ()
-		xfrom = self.ul[0]-((self.ul[0]-self.lr[0]) / 2.)
-		yfrom = self.ul[1]-((self.ul[1]-self.lr[1]) / 2.)
-		xto = other.ul[0]-((other.ul[0]-other.lr[0]) / 2.)
-		yto = other.ul[1]-((other.ul[1]-other.lr[1]) / 2.)
-
-		return ((xfrom, yfrom), (xto, yto))
-		
-	def update_save (self):
-		next = self.element.firstChild
-		while next:
-			m = next.nextSibling
-			if next.nodeName == "point":
-				self.element.removeChild (next)
-				next.unlink ()
-			next = m
-		text = self.extended_buffer.get_text ()
-		if text:
-			self.extended_element.replaceWholeText (text)
-		else:
-			self.extended_element.replaceWholeText ("LABYRINTH_AUTOGEN_TEXT_REMOVE")
-		self.element.setAttribute ("ul-coords", str(self.ul))
-		self.element.setAttribute ("lr-coords", str(self.lr))
-		self.element.setAttribute ("identity", str(self.identity))
-		self.element.setAttribute ("min_x", str(self.min_x))
-		self.element.setAttribute ("min_y", str(self.min_y))
-		self.element.setAttribute ("max_x", str(self.max_x))
-		self.element.setAttribute ("max_y", str(self.max_y))
-		
-		if self.am_root:
-				self.element.setAttribute ("current_root", "true")
-		else:
-			try:
-				self.element.removeAttribute ("current_root")
-			except xml.dom.NotFoundErr:
-				pass
-		if self.am_primary:
-			self.element.setAttribute ("primary_root", "true");
-		else:
-			try:
-				self.element.removeAttribute ("primary_root")
-			except xml.dom.NotFoundErr:
-				pass				
-		doc = self.element.ownerDocument
-		for p in self.points:
-			elem = doc.createElement ("point")
-			self.element.appendChild (elem)
-			elem.setAttribute ("coords", str((p.x,p.y)))
-			elem.setAttribute ("type", str(p.style))
-		return
-		
-	def load_data (self, node):
-		tmp = node.getAttribute ("ul-coords")
-		self.ul = utils.parse_coords (tmp)
-		tmp = node.getAttribute ("lr-coords")
-		self.lr = utils.parse_coords (tmp)
-		self.identity = int (node.getAttribute ("identity"))
-		self.min_x = float(node.getAttribute ("min_x"))
-		self.min_y = float(node.getAttribute ("min_y"))
-		self.max_x = float(node.getAttribute ("max_x"))
-		self.max_y = float(node.getAttribute ("max_y"))
-
-		if node.hasAttribute ("current_root"):
-			self.am_root = True
-		else:
-			self.am_root = False
-		if node.hasAttribute ("primary_root"):
-			self.am_primary = True
-		else:
-			self.am_primary = False
-			
-		for n in node.childNodes:
-			if n.nodeName == "Extended":
-				for m in n.childNodes:
-					if m.nodeType == m.TEXT_NODE:
-						text = m.data
-						if text != "LABYRINTH_AUTOGEN_TEXT_REMOVE":
-							self.extended_buffer.set_text (text)
-			elif n.nodeName == "point":
-				style = int (n.getAttribute ("type"))
-				tmp = n.getAttribute ("coords")
-				c = utils.parse_coords (tmp)
-				self.points.append (DrawingPoint (c, style))
-			else:
-				print "Unknown node type: "+str(n.nodeName)
-
-	def get_max_area (self):
-		return (self.ul[0],self.ul[1],self.lr[0],self.lr[1])
