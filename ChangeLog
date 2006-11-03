@@ -1,5 +1,13 @@
 2006-11-03 Don Scorgie <DonScorgie@Blueyonder.co.uk>
 
+	* src/TextThought.py:
+	Don't break when backspacing at the start of text / deleting
+	at the end of text
+	* src/MMapArea.py:
+	When creating a new thought, don't select it -
+	this results in daisy-chaning thoughts, instead of (what is probably
+	wanted) adding a new thought to the current parent
+
 	* src/MMapArea.py:
 	Recognise the Menu key.  Don't actually do anything, but...
 	Hook up the input context when loading

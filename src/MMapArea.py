@@ -164,22 +164,30 @@ class MMapArea (gtk.DrawingArea):
 				return True
 			if not self.primary:
 				self.make_primary (thought)
+				self.select_thought (thought, None)
+			else:
+				self.emit ("change_buffer", thought.extended_buffer)
+				if self.commit_handler:
+					self.im_context.disconnect (self.commit_handler)
+				self.commit_handler = self.im_context.connect ("commit", thought.commit_text, self.mode)
+				for x in self.selected:
+					self.create_link (x, None, thought)
 			if self.unending_link:
 				self.unending_link.set_child (thought)
 				self.links.append (self.unending_link)
 				element = self.unending_link.get_save_element ()
 				self.element.appendChild (element)
 				self.unending_link = None
-			else:
-				for x in self.selected:
-					self.create_link (x, None, thought)
-			self.select_thought (thought, None)
 			self.begin_editing (thought)
 		self.invalidate ()
 		return ret
 
 	def key_press (self, widget, event):
 		if not self.im_context.filter_keypress (event):
+			if self.editing:
+				if not self.editing.process_key_press (event, self.mode):
+					return self.global_key_handler (event)
+				return True
 			if len(self.selected) != 1 or not self.selected[0].process_key_press (event, self.mode):
 				return self.global_key_handler (event)
 		return True
@@ -282,11 +290,7 @@ class MMapArea (gtk.DrawingArea):
 		self.thoughts.remove (thought)
 		self.thoughts.append(thought)
 
-		if modifiers and modifiers & gtk.gdk.CONTROL_MASK:
-			if self.selected.count (thought) == 0:
-				self.selected.append (thought)
-		elif modifiers and (modifiers & gtk.gdk.SHIFT_MASK or modifiers == -1):
-			# TODO: This should really be different somehow
+		if modifiers and (modifiers & gtk.gdk.SHIFT_MASK or modifiers == -1):
 			if self.selected.count (thought) == 0:
 				self.selected.append (thought)
 		else:
@@ -301,8 +305,8 @@ class MMapArea (gtk.DrawingArea):
 			self.emit ("change_buffer", None)
 
 	def begin_editing (self, thought):
-		if self.selected.count (thought) != 1 or len (self.selected) != 1:
-			return
+		#if self.selected.count (thought) != 1 or len (self.selected) != 1:
+		#	return
 		if self.editing:
 			self.finish_editing ()
 		do_edit = thought.begin_editing ()
