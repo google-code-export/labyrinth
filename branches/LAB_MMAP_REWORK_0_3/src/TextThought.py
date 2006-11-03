@@ -224,6 +224,8 @@ class TextThought (BaseThought.BaseThought):
 		return handled
 
 	def delete_char (self):
+		if self.index == self.end_index == len (self.text):
+			return
 		if self.index > self.end_index:
 			left = self.text[:self.end_index]
 			right = self.text[self.index:]
@@ -245,6 +247,8 @@ class TextThought (BaseThought.BaseThought):
 		self.end_index = self.index
 
 	def backspace_char (self):
+		if self.index == self.end_index == 0:
+			return
 		if self.index > self.end_index:
 			left = self.text[:self.end_index]
 			right = self.text[self.index:]
