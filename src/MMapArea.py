@@ -97,6 +97,7 @@ class MMapArea (gtk.DrawingArea):
 		self.im_context = gtk.IMMulticontext ()
 
 		self.mode = MODE_EDITING
+		self.old_mode = MODE_EDITING
 
 		self.connect ("expose_event", self.expose)
 		self.connect ("button_release_event", self.button_release)
@@ -232,6 +233,8 @@ class MMapArea (gtk.DrawingArea):
 
 
 	def set_mode (self, mode):
+		if mode == self.mode:
+			return
 		self.old_mode = self.mode
 		self.mode = mode
 		self.finish_editing ()
@@ -264,7 +267,7 @@ class MMapArea (gtk.DrawingArea):
 		thought.make_primary ()
 
 	def select_thought (self, thought, modifiers):
-		if modifiers & gtk.gdk.SHIFT_MASK and len (self.selected) > 1 and self.selected.count (thought) > 0:
+		if modifiers and modifiers & gtk.gdk.SHIFT_MASK and len (self.selected) > 1 and self.selected.count (thought) > 0:
 			self.selected.remove (thought)
 			thought.unselect ()
 			return
@@ -401,7 +404,6 @@ class MMapArea (gtk.DrawingArea):
 		elif type == TYPE_DRAWING:
 			thought = DrawingThought.DrawingThought (coords, self.pango_context, self.nthoughts, self.save, loading)
 		if not thought.okay ():
-			print "Not okay"
 			return None
 		elif type == TYPE_IMAGE:
 			self.emit ("change_mode", self.old_mode)
