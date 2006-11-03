@@ -1,8 +1,12 @@
+2006-11-03 Don Scorgie <DonScorgie@Blueyonder.co.uk>
+
+	* src/TextThought.py:
+	Make cut / copy / paste work again
+
 2006-11-02 Don Scorgie <DonScorgie@Blueyonder.co.uk>
 
 	(Everything thing seems to be working okay now
-	 *fingers crossed* - Loads all my test maps at least)
-	 
+	 *fingers crossed* - Loads all my test maps at least)	 
 	* src/DrawingThought.py:
 	Convert Drawing to new framework
 	

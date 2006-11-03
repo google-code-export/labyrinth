@@ -455,6 +455,26 @@ class TextThought (BaseThought.BaseThought):
 			except xml.dom.NotFoundErr:
 				pass
 
+	def rebuild_byte_table (self):
+		# Build the Byte table
+		del self.bytes
+		self.bytes = ''
+		tmp = self.text.encode ("utf-8")
+		current = 0
+		for z in range(len(self.text)):
+			if str(self.text[z]) == str(tmp[current]):
+				self.bytes += '1'
+			else:
+				blen = 2
+				while 1:
+					if str(tmp[current:current+blen].encode()) == str(self.text[z]):
+						self.bytes += str(blen)
+						current+=(blen-1)
+						break
+					blen += 1
+			current+=1
+		self.bindex = self.b_f_i (self.index)
+		self.text = tmp
 
 	def load (self, node):
 		self.index = int (node.getAttribute ("cursor"))
@@ -471,7 +491,7 @@ class TextThought (BaseThought.BaseThought):
 			self.editing = True
 		else:
 			self.editing = False
-			self.end_index = index
+			self.end_index = self.index
 		if node.hasAttribute ("current_root"):
 			self.am_selected = True
 		else:
@@ -492,24 +512,36 @@ class TextThought (BaseThought.BaseThought):
 							self.extended_buffer.set_text (text)
 			else:
 				print "Unknown: "+n.nodeName
-		# Build the Byte table
-		tmp = self.text.encode ("utf-8")
-		current = 0
-		for z in range(len(self.text)):
-			if str(self.text[z]) == str(tmp[current]):
-				self.bytes += '1'
-			else:
-				blen = 2
-				while 1:
-					if str(tmp[current:current+blen].encode()) == str(self.text[z]):
-						self.bytes += str(blen)
-						current+=(blen-1)
-						break
-					blen += 1
-			current+=1
-		self.bindex = self.b_f_i (self.index)
-		self.text = tmp
+		self.rebuild_byte_table ()
 		self.recalc_edges ()
+
+	def copy_text (self, clip):
+		if self.end_index > self.index:
+			clip.set_text (self.text[self.index:self.end_index])
+		else:
+			clip.set_text (self.text[self.end_index:self.index])
+
+
+	def cut_text (self, clip):
+		if self.end_index > self.index:
+			clip.set_text (self.text[self.index:self.end_index])
+		else:
+			clip.set_text (self.text[self.end_index:self.index])
+		self.delete_char ()
+		self.recalc_edges ()
+		self.emit ("title_changed", self.text)
+		self.bindex = self.bindex_from_index (self.index)
+		self.emit ("update_view")
+
+	def paste_text (self, clip):
+		text = clip.wait_for_text()
+		self.add_text (text)
+		self.rebuild_byte_table ()
+		self.recalc_edges ()
+		self.emit ("title_changed", self.text)
+		self.bindex = self.bindex_from_index (self.index)
+		self.emit ("update_view")
+
 
 
 class TextThoughtOld (BaseThought.BaseThought):
