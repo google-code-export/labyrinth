@@ -215,6 +215,7 @@ class TextThought (BaseThought.BaseThought):
 		else:
 			handled = False
 		self.recalc_edges ()
+		self.selection_changed ()
 		self.emit ("title_changed", self.text)
 		self.bindex = self.bindex_from_index (self.index)
 		self.emit ("update_view")
@@ -382,6 +383,17 @@ class TextThought (BaseThought.BaseThought):
 					self.end_index = self.index
 			elif mode == BaseThought.MODE_EDITING and event.type == gtk.gdk._2BUTTON_PRESS:
 				self.emit ("begin_editing")
+		elif event.button == 2 and self.editing:
+			x = int ((event.x - self.ul[0])*pango.SCALE)
+			y = int ((event.y - self.ul[1])*pango.SCALE)
+			loc = self.layout.xy_to_index (x, y)
+			self.index = loc[0]
+			if loc[0] >= len(self.text) -1 or self.text[loc[0]+1] == '\n':
+				self.index += loc[1]
+			self.bindex = self.bindex_from_index (self.index)
+			self.end_index = self.index
+			clip = gtk.Clipboard (selection="PRIMARY")
+			self.paste_text (clip)
 		elif event.button == 3:
 			self.emit ("popup_requested", (event.x, event.y), 1)
 		self.emit ("update_view")
@@ -390,6 +402,12 @@ class TextThought (BaseThought.BaseThought):
 		if unending_link:
 			unending_link.set_child (self)
 			self.emit ("claim_unending_link")
+
+	def selection_changed (self):
+		if self.index > self.end_index:
+			self.emit ("text_selection_changed", self.end_index, self.index, self.text[self.end_index:self.index])
+		else:
+			self.emit ("text_selection_changed", self.index, self.end_index, self.text[self.index:self.end_index])
 
 	def handle_motion (self, event, mode):
 		if event.state & gtk.gdk.BUTTON1_MASK and self.editing:
@@ -402,6 +420,7 @@ class TextThought (BaseThought.BaseThought):
 				if loc[0] >= len(self.text) -1 or self.text[loc[0]+1] == '\n':
 					self.index += loc[1]
 				self.bindex = self.bindex_from_index (self.index)
+				self.selection_changed ()
 			elif mode == BaseThought.MODE_EDITING:
 				self.emit ("finish_editing")
 				self.emit ("create_link", \
@@ -535,6 +554,8 @@ class TextThought (BaseThought.BaseThought):
 
 	def paste_text (self, clip):
 		text = clip.wait_for_text()
+		if not text:
+			return
 		self.add_text (text)
 		self.rebuild_byte_table ()
 		self.recalc_edges ()
