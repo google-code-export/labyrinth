@@ -1,6 +1,10 @@
 2006-11-03 Don Scorgie <DonScorgie@Blueyonder.co.uk>
 
 	* src/MMapArea.py:
+	Recognise the Menu key.  Don't actually do anything, but...
+	Hook up the input context when loading
+
+	* src/MMapArea.py:
 	Only "own" unending links when it's different thoughts
 	Change cursor to "grabbing hand" when moving throughts around
 
