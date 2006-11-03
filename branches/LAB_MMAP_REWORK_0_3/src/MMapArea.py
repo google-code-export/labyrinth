@@ -475,14 +475,17 @@ class MMapArea (gtk.DrawingArea):
 		link.element.unlink ()
 		self.links.remove (link)
 
+	def popup_menu_key (self, event):
+		print "Popup Menu Key"
+
 	def global_key_handler (self, event):
-		# Use a throw-away dictionary for keysym lookup.
-		# Idea from: http://simon.incutio.com/archive/2004/05/07/switch
-		# Dunno why.  Just trying things out
-		try:
-			{ gtk.keysyms.Delete: self.delete_selected_thoughts,
-			  gtk.keysyms.BackSpace: self.delete_selected_thoughts}[event.keyval]()
-		except:
+		if event.keyval == gtk.keysyms.Delete:
+			self.delete_selected_thoughts ()
+		elif event.keyval == gtk.keysyms.BackSpace:
+			self.delete_selected_thoughts ()
+		elif event.keyval == gtk.keysyms.Menu:
+			self.popup_menu_key (event)
+		else:
 			return False
 		self.invalidate ()
 		return True
@@ -525,6 +528,11 @@ class MMapArea (gtk.DrawingArea):
 				t.select ()
 			if t.editing:
 				self.begin_editing (t)
+		if len(self.selected) == 1:
+			self.emit ("change_buffer", self.selected[0].extended_buffer)
+			self.commit_handler = self.im_context.connect ("commit", self.selected[0].commit_text, self.mode)
+		else:
+			self.emit ("change_buffer", None)
 		del_links = []
 		for l in self.links:
 			if (l.parent_number == -1 and l.child_number == -1) or \
