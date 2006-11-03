@@ -450,9 +450,17 @@ class MMapArea (gtk.DrawingArea):
 		return True
 
 	def delete_selected_thoughts (self):
-		for t in self.selected:
+		if len(self.selected) == 0:
+			return
+		tmp = self.selected
+		t = tmp.pop()
+		while t:
 			self.delete_thought (t)
-		self.invlaidate ()
+			if len (tmp) == 0:
+				t = None
+			else:
+				t = tmp.pop()
+		self.invalidate ()
 
 	def delete_link (self, link):
 		self.element.removeChild (link.element)
