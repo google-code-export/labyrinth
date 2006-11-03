@@ -1,6 +1,10 @@
 2006-11-03 Don Scorgie <DonScorgie@Blueyonder.co.uk>
 
 	* src/TextThought.py:
+	Copy primary selection when necessary.  Paste
+	primary selection on middle-button press
+
+	* src/TextThought.py:
 	Make cut / copy / paste work again
 
 2006-11-02 Don Scorgie <DonScorgie@Blueyonder.co.uk>
