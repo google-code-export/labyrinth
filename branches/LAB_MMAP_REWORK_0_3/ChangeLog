@@ -1,5 +1,15 @@
 2006-11-03 Don Scorgie <DonScorgie@Blueyonder.co.uk>
 
+	* src/DrawingThought.py:
+	When in draw mode and inside the drawing area,
+	set the cursor to be a pencil
+	Fix to allow unending links to eminate in
+	Edit mode.
+	
+	* src/MMapArea.py:
+	When loading in non-edit mode, set the old_mode
+	to be editing mode
+
 	* src/TextThought.py:
 	Copy primary selection when necessary.  Paste
 	primary selection on middle-button press
