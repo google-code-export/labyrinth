@@ -1,5 +1,9 @@
 2006-11-03 Don Scorgie <DonScorgie@Blueyonder.co.uk>
 
+	* src/MMapArea.py:
+	Don't delete from a live list (Bad!)
+	Makes deletion of > 1 thought work properly
+
 	* src/DrawingThought.py:
 	When in draw mode and inside the drawing area,
 	set the cursor to be a pencil
