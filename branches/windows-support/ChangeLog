@@ -1,3 +1,25 @@
+2007-03-08 Don Scorgie <Don@Scorgie.org>
+   
+	* Windows/COPYING.txt:
+	* Windows/defs.py:
+	* Windows/lab.iss:
+	* Windows/labyrinth.lnk:
+	* Windows/labyrinth.bat:
+	* Windows/labyrinth.ico:
+	* Windows/WinSetup.bat:
+	* Windows/winsetup.py:
+	Add files for Windows build
+
+	* src/Browser.py:
+	* src/labyrinth.py:
+	* src/MainWindow.py:
+	* src/TextThought.py:
+	* src/utils.py:
+	Various fixes required to build and run on Windows properly
+
+	* AUTHORS:
+	Update my email address
+
 2006-11-25 Don Scorgie <DonScorgie@Blueyonder.co.uk>
 
     * src/Links.py:
