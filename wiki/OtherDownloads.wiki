@@ -5,3 +5,7 @@
 deb http://ppa.launchpad.net/mascha/ubuntu gutsy main
 deb-src http://ppa.launchpad.net/mascha/ubuntu gutsy main
 }}}
+==direct download==
+{{{
+http://launchpadlibrarian.net/12788808/labyrinth_0.4.0-0rc1_all.deb
+}}}
