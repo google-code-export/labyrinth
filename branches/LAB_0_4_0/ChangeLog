@@ -1,6 +1,17 @@
+2008-03-25 Matthias Vogelgesang <matthias.vogelgesang@gmail.com>
+
+	* src/utils.py
+	* src/MapList.py
+	* src/MainWindow.py
+	* src/Browser.py
+	* src/ImageThought.py
+	* po/de.po
+	* po/labyrinth.pot
+	Export maps with images as tarball. Sync with trunk.
+
 2008-03-25 Martin Schaaf <mascha@ma-scha.de>
 
-        * src/ImageThought.py
+	* src/ImageThought.py
 	* src/TextThought.py
 	* src/DrawingThought.py
 	* src/utils.py
