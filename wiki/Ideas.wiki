@@ -1,5 +1,3 @@
-= Ideas =
-
 Tell us your ideas about labyrinth and we will add them here or add them yourself.
 
   * Speech bubble
@@ -22,3 +20,7 @@ Tell us your ideas about labyrinth and we will add them here or add them yoursel
 
   * Speed (2).  Another slow-down is moving thoughts around.  One solution to this is to track which thought caused the redraw and pass this to every link we request drawing.  The link would then know if it's associated with that thought and draw itself.  Maybe it'd be enough to only draw the thought and all links.  There's also an issue here with
 dragging thoughts over other thoughts.  Guess we'd need to keep the original and new coords and redraw that area.
+
+  * More keyboard navigation possibilities.
+
+  * HIG compliance
