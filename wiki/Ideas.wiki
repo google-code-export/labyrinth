@@ -4,7 +4,10 @@ Tell us your ideas about labyrinth and we will add them here or add them yoursel
 
   * Speech bubble
      Show extended info as a speech bubble that can be opened and closed.
-  * Flying presentation
-     Start a presentation by zooming out and show the complete mindmap. Select a thought zoom in smoothly and show the extended content beside the thought if the user is near the thought
+  * Fly by presentation
+     Start a presentation by zooming out and show the complete mindmap. Select a thought zoom in smoothly and show the extended content beside the thought if the user is near enough the thought. After selecting the thought again zoom out again smoothly to see the complete map.
   * Tomboy Applet Style
      Add Labyrinth to the applet panel and manage maps like Tomboy does with notes. See Issue 77 for some mockups provided by frandavid100.
+  * Gnome integration
+     Theme, Drag and Drop, ...
+  
