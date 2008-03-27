@@ -1,4 +1,4 @@
-abyrinth (0.4.0rc6) gutsy; urgency=low
+labyrinth (0.4.0rc6) gutsy; urgency=low
 
   * add font selection support for thoughts, fixes issue 79
   * change attributes instead of inserting, fixes hopefully issue 53
