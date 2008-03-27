@@ -1,8 +1,18 @@
 2008-03-25 Martin Schaaf <mascha@ma-scha.de>
 
-        * configure.ac
-        * debian/changelog
-        o bumb version to 0.4.0rc5
+	* src/TextThought.py
+	* src/MMapArea.py
+	* src/BaseThought.py
+	* src/MainWindow.py
+	* src/TextBufferMarkup.py
+	o add font selection support for thoughts, fixes issue 79
+	o change attributes instead of inserting, fixes hopefully issue 53
+
+2008-03-25 Martin Schaaf <mascha@ma-scha.de>
+
+	* configure.ac
+	* debian/changelog
+	o bumb version to 0.4.0rc5
 
 2008-03-25 Matthias Vogelgesang <matthias.vogelgesang@gmail.com>
 
