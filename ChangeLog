@@ -1,14 +1,14 @@
-2008-03-27 Martin Schaaf <mascha@ma-scha.de>
+2008-03-28 Martin Schaaf <mascha@ma-scha.de>
+
+	* src/labyrinth.py
+	o check for pygtk version before gtk is imported like it is
+	said in the pygtk FAQ, fixes Issue 82
+
+2008-03-28 Martin Schaaf <mascha@ma-scha.de>
 
 	* configure.ac
 	* debian/changelog
 	o bumb version to 0.4.0rc7
-
-2008-03-28 Martin Schaaf <mascha@ma-scha.de>
-
-	* src/labyrinth.py
-	o check for pygtk version before gtk is imported like it is said in
-	the pygtk FAQ, fixes Issue 82
 
 2008-03-28 Martin Schaaf <mascha@ma-scha.de>
 
