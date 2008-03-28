@@ -1,5 +1,12 @@
 2008-03-27 Martin Schaaf <mascha@ma-scha.de>
 
+	* src/MapList.py
+	o fix renaming of thought
+	* src/Browser.py
+	o raise a AttributeError instead of a deprecated String
+
+2008-03-27 Martin Schaaf <mascha@ma-scha.de>
+
 	* configure.ac
 	* debian/changelog
 	o bumb version to 0.4.0rc6
