@@ -1,0 +1,17 @@
+#labels Featured,Phase-Requirements
+= Roadmap for 0.5.0 =
+
+== Goals ==
+
+  * all of [Ideas the listed ideas]?
+
+== Schedule ==
+
+We should have something like a schedule, so we can better focus on feature implementation, translation and bug fixing. However, it is not clear for when to set a deadline.
+
+|| *Date* || *Status* || *Notes* ||
+|| xx.xx.08 || Feature Freeze || No more features, just bug fixing ||
+|| xx.xx.08 || String Freeze || No more changes to the internationalizable strings ||
+|| xx.xx.08 || Beta Phase || ||
+|| xx.xx.08 || RC Phase || ||
+|| xx.xx.08 || Release || ||
