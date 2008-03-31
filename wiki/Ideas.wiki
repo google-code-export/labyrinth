@@ -33,6 +33,9 @@ Tell us your ideas about labyrinth and we will add them here or add them yoursel
   * Hide / show thoughts
 
   * Popup menus everywhere
+
+  * allow to align links and thoughts
+
 == Image Thoughts ==
   * Ability to change images
 
