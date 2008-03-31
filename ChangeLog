@@ -1,3 +1,10 @@
+2008-03-29 Matthias Vogelgesang <matthias.vogelgesang@gmail.com>
+
+	* src/MainWindow.py
+	* src/utils.py
+	* data/labyrinth.glade
+	Sync with trunk.
+
 2008-03-28 Matthias Vogelgesang <matthias.vogelgesang@gmail.com>
 
 	* src/MMapArea.py
