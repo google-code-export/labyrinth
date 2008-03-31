@@ -11,8 +11,8 @@
 We should have something like a schedule, so we can better focus on feature implementation, translation and bug fixing. However, it is not clear for when to set a deadline.
 
 || *Date* || *Status* || *Notes* ||
-|| xx.xx.08 || Feature Freeze || No more features, just bug fixing ||
-|| xx.xx.08 || String Freeze || No more changes to the internationalizable strings ||
-|| xx.xx.08 || Beta Phase || ||
-|| xx.xx.08 || RC Phase || ||
-|| xx.xx.08 || Release || ||
+|| 08/09/01 || Feature Freeze || No more features, just bug fixing ||
+|| 08/09/24 || String Freeze || No more changes to the internationalizable strings ||
+|| 01.10.08 || Release || ||
+
+Schedule as [http://www.google.com/calendar/ical/iqu1fjojo7ae9eqtpr996c21jk%40group.calendar.google.com/public/basic.ics ical].
