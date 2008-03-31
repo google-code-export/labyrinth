@@ -41,8 +41,11 @@ Tell us your ideas about labyrinth and we will add them here or add them yoursel
 
   * Bezier curves
 
+== Links ==
+  * Abbility to add text
+
 == Image Thoughts ==
-  * Ability to change images
+  * Abbility to change images
 
 == Drawing Thoughts ==
   * Different pen widths
