@@ -24,5 +24,15 @@ Tell us your ideas about labyrinth and we will add them here or add them yoursel
 
   * HIG compliance
 
+  * Import from (at least) kdissert and freemind
+
+  * Printing support for maps
+
+  * Hide / show thoughts
+
+  * Popup menus everywhere
 == Image Thoughts ==
   * Ability to change images
+
+== Drawing Thoughts ==
+  * Different pen widths
