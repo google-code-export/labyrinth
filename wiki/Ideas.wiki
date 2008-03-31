@@ -34,7 +34,9 @@ Tell us your ideas about labyrinth and we will add them here or add them yoursel
 
   * Popup menus everywhere
 
-  * allow to align links and thoughts
+  * Allow to align links and thoughts
+
+  * Bezier curves
 
 == Image Thoughts ==
   * Ability to change images
