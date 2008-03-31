@@ -1,3 +1,9 @@
+labyrinth (0.4.0) gutsy; urgency=low
+
+  * check for pygtk version before gtk is imported like it is said in the pygtk FAQ, fixes Issue 82
+  * update de translation
+  * fix export dialog
+
 labyrinth (0.4.0rc7) gutsy; urgency=low
   
   * add missing file to distribution
