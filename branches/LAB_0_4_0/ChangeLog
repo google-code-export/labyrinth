@@ -1,4 +1,9 @@
-2008-03-31 Matthias Vogelgesang <matthias.vogelgesang@gmail.com>
+2008-04-01 Matthias Vogelgesang <matthias.vogelgesang@gmail.com>
+
+	* src/MMapArea.py
+	Critical bug fixed. Couldn't deselect after selecting with box.
+	
+2008-03-31 Martin Schaaf <mascha@ma-scha.de>
 
 	* configure.ac
 	* debian/changelog
