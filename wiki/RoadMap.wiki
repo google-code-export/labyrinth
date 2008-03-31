@@ -3,6 +3,7 @@
 
 == Goals ==
 
+  * [http://code.google.com/p/labyrinth/issues/list?q=label:release0.5 Open issues for this release.]
   * all of [Ideas the listed ideas]?
 
 == Schedule ==
