@@ -5,4 +5,4 @@
 
 If you have a nice screenshot and want it to be added here please send it to the [http://groups.google.com/group/labyrinth-devel labyrinth mailinglist] with the word screenshot included in the subject.
 
-[http://code.google.com/svn/wiki/screenshot-labyrinth_1.png]
+[http://labyrinth.googlecode.com/svn/wiki/screenshot-labyrinth_1.png]
