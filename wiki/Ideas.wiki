@@ -1,4 +1,6 @@
+#summary Collection for new features, improvements and labyrinths goals.
 #labels Featured
+
 [http://code.google.com/p/labyrinth/issues/list?can=2&q=type:Enhancement Enhancements requests from the issue tracker]
 
 Tell us your ideas about labyrinth and we will add them here or add them yourself.
