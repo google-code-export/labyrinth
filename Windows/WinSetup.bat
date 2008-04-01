@@ -23,6 +23,7 @@ mkdir dist\data_files\share\locale\ca\LC_MESSAGES
 mkdir dist\data_files\share\locale\cs\LC_MESSAGES
 mkdir dist\data_files\share\locale\de\LC_MESSAGES
 mkdir dist\data_files\share\locale\eu\LC_MESSAGES
+mkdir dist\data_files\share\locale\fa\LC_MESSAGES
 mkdir dist\data_files\share\locale\fr\LC_MESSAGES
 mkdir dist\data_files\share\locale\it\LC_MESSAGES
 mkdir dist\data_files\share\locale\nl\LC_MESSAGES
@@ -40,6 +41,7 @@ c:\GetText-Tools\bin\msgfmt.exe -o ..\dist\data_files\share\locale\ca\LC_MESSAGE
 c:\GetText-Tools\bin\msgfmt.exe -o ..\dist\data_files\share\locale\cs\LC_MESSAGES\labyrinth.mo cs.po
 c:\GetText-Tools\bin\msgfmt.exe -o ..\dist\data_files\share\locale\de\LC_MESSAGES\labyrinth.mo de.po
 c:\GetText-Tools\bin\msgfmt.exe -o ..\dist\data_files\share\locale\eu\LC_MESSAGES\labyrinth.mo eu.po
+c:\GetText-Tools\bin\msgfmt.exe -o ..\dist\data_files\share\locale\fa\LC_MESSAGES\labyrinth.mo fa.po
 c:\GetText-Tools\bin\msgfmt.exe -o ..\dist\data_files\share\locale\fr\LC_MESSAGES\labyrinth.mo fr.po
 c:\GetText-Tools\bin\msgfmt.exe -o ..\dist\data_files\share\locale\it\LC_MESSAGES\labyrinth.mo it.po
 c:\GetText-Tools\bin\msgfmt.exe -o ..\dist\data_files\share\locale\nl\LC_MESSAGES\labyrinth.mo nl.po
@@ -97,6 +99,7 @@ copy c:\GTK\share\locale\ca\LC_MESSAGES dist\data_files\share\locale\ca\LC_MESSA
 copy c:\GTK\share\locale\cs\LC_MESSAGES dist\data_files\share\locale\cs\LC_MESSAGES
 copy c:\GTK\share\locale\de\LC_MESSAGES dist\data_files\share\locale\de\LC_MESSAGES
 copy c:\GTK\share\locale\eu\LC_MESSAGES dist\data_files\share\locale\eu\LC_MESSAGES
+copy c:\GTK\share\locale\fa\LC_MESSAGES dist\data_files\share\locale\fa\LC_MESSAGES
 copy c:\GTK\share\locale\fr\LC_MESSAGES dist\data_files\share\locale\fr\LC_MESSAGES
 copy c:\GTK\share\locale\it\LC_MESSAGES dist\data_files\share\locale\it\LC_MESSAGES
 copy c:\GTK\share\locale\nl\LC_MESSAGES dist\data_files\share\locale\nl\LC_MESSAGES

@@ -1,3 +1,43 @@
+01/04/08 v0.4 (Second Coming)
+-------------
+
+First, may I introduce two new maintainers for labyrinth:
+Martin Schaff
+and
+Matthias Vogelgesang
+The vast majority of the following changes are their work.
+
+New Features:
+ * Scaling and scrollable canvas (infinite sized maps!)
+ * Add support for text attributes (bold, italics, underline and font selection )
+ * Arrow navigation of thoughts
+ * Support foreground and background colouring of nodes
+ * Import and export "labyrinth files" for maps in the form of tarballs
+ * SVG export
+ * PDF export
+ * Save browser window state across instances (UNIX build only)
+ * Bundle of optimisation work
+ * Selection using bounding box
+ * Add crude Windows building support
+ * Searching in the browser window
+
+Bugs Fixed:
+ * So many bugs fixed.  Only important ones listed.
+ * Auto-save maps every 60s (issue #64)
+ * Create intermediate dirs for savedir (issue #50)
+ * Links don't disappear any more (issue #62)
+ * Exception fixed when saving an empty map
+ * Show a thicker border if there's extended info on a thought (issue #33)
+ * Check pygtk version before importing it (issue #82)
+ * Fix incorrect movement undos on occasion (issue #80)
+
+translations:
+ * de (Matthias Vogelgesang)
+ * fa (Pedram Azimaie)
+ * it (Francesco Fullone)
+ * pt_BR (Leonardo Gregianin)
+ * ru (Alexandre Prokoudine)
+
 12/11/06 v0.3 (Beautiful Insane)
 -------------
 
