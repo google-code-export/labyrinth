@@ -1,0 +1,44 @@
+<ui>
+  <menubar name="MenuBar">
+    <menu action="FileMenu">
+      <menuitem action="Export"/>
+      <menuitem action="ExportMap"/>
+      <separator/>
+      <menuitem action="Close"/>
+    </menu>
+    <menu action="EditMenu">
+      <menuitem action="Undo"/>
+      <menuitem action="Redo"/>
+      <separator/>
+      <menuitem action="Cut"/>
+	  <menuitem action="Copy"/>
+	  <menuitem action="Paste"/>
+	  <separator/>
+	  <menuitem action="LinkThoughts"/>
+      <menuitem action="DeleteNodes"/>
+      <menuitem action="ViewExtend"/>
+    </menu>
+    <menu action="ModeMenu">
+      <menuitem action="Edit"/>
+      <menuitem action="Drawing"/>
+      <menuitem action="AddImage"/>
+      <separator/>
+	  <menuitem action="ZoomIn"/>
+	  <menuitem action="ZoomOut"/>
+    </menu>
+  </menubar>
+  <toolbar name="ToolBar">
+    <toolitem action="Edit"/>
+    <toolitem action="Drawing"/>
+    <toolitem action="AddImage"/>
+    <toolitem action="ZoomIn"/>
+    <toolitem action="ZoomOut"/>
+    <toolitem action="Undo"/>
+    <toolitem action="Redo"/>
+  </toolbar>
+  <toolbar name="AddedTools">
+  	<toolitem action="Bold"/>
+  	<toolitem action="Italics"/>
+  	<toolitem action="Underline"/>
+  </toolbar>
+</ui>
