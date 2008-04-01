@@ -25,7 +25,7 @@ Tell us your ideas about labyrinth and we will add them here or add them yoursel
 
   * More keyboard navigation possibilities.
 
-  * HIG compliance
+  * HIG compliance (Issue 76)
 
   * Import from (at least) kdissert and freemind
 
@@ -35,7 +35,7 @@ Tell us your ideas about labyrinth and we will add them here or add them yoursel
 
   * Popup menus everywhere
 
-  * Allow to align links and thoughts
+  * Allow to align links and thoughts (Issue 71, Issue 87)
 
   * Bezier curves
 
