@@ -4,6 +4,8 @@ labyrinth (0.4.0) gutsy; urgency=low
   * update de translation
   * fix export dialog
 
+ -- Martin Schaaf (Privat) <mascha@ma-scha.de>  Fri, 01 Apr 2008 10:00:00 +0100
+
 labyrinth (0.4.0rc7) gutsy; urgency=low
   
   * add missing file to distribution
