@@ -1,3 +1,13 @@
+2008-04-03 Martin Schaaf <mascha@ma-scha.de>
+
+	* src/MapList.py
+	* src/MainWindow.py
+	Differentiate between index in MapList and index in
+	browser (column id). Column id is used as map index.
+	Calculate new column id from biggest existing column id.
+	Remove map title to map relation because it isn't used.
+	Backport from trunk.
+
 == 0.4 ==
 2008-04-01  Don Scorgie  <Don@Scorgie.org>
 
@@ -7,7 +17,7 @@
 
 	* Windows/WinSetup.bat:
 	Updates for new Windows build
-	
+
 2008-04-01 Matthias Vogelgesang <matthias.vogelgesang@gmail.com>
 
 	* src/MMapArea.py
