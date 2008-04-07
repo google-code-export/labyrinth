@@ -37,7 +37,7 @@ Tell us your ideas about labyrinth and we will add them here or add them yoursel
 
   * Allow to align links and thoughts (Issue 71, Issue 87)
 
-  * Bezier curves
+  * ~~Bezier curves~~
 
 == Links ==
   * Abbility to add text
