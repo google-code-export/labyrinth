@@ -16,3 +16,9 @@ We should have something like a schedule, so we can better focus on feature impl
 || 08/10/01 || Release || ||
 
 Schedule as [http://www.google.com/calendar/ical/iqu1fjojo7ae9eqtpr996c21jk%40group.calendar.google.com/public/basic.ics ical].
+
+= Roadmap for 0.6.0 =
+
+  * Move to PyGObject
+  * Move to a DCVS (hg on code.google.com? github.com?)
+  * Clean-up code base
