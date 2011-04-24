@@ -20,5 +20,7 @@ Schedule as [http://www.google.com/calendar/ical/iqu1fjojo7ae9eqtpr996c21jk%40gr
 = Roadmap for 0.6.0 =
 
   * Move to PyGObject
+  * Use GtkBuilder for UI
+  * Make use of Python's `property`
   * Move to a DCVS (hg on code.google.com? github.com?)
   * Clean-up code base
