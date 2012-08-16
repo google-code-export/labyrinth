@@ -1,0 +1,10 @@
+#summary Plans for reorganising development after 0.5 release
+
+  # Decide on distributed hosting platform:
+    * Github - popular
+    * Bitbucket - common in Python circles, hg has a nice GUI (tortoisehg)
+    * Google Code - Already using it, could migrate to Git or Hg. But it's less popular and doesn't offer pull requests.
+  # Migrate to new hosting/VCS
+  # Update code to use Gtk 3
+  # Refactoring and reorganisation
+  # Port to Python 3?
