@@ -6,5 +6,6 @@
     * Google Code - Already using it, could migrate to Git or Hg. But it's less popular and doesn't offer pull requests.
   # Migrate to new hosting/VCS
   # Update code to use Gtk 3
+  # Simplify build system
   # Refactoring and reorganisation
   # Port to Python 3?
